@@ -22,7 +22,7 @@ tasks:
     purpose: Pull the latest changes from the remote
     produces: { latestCommit, branchName }
     on-success: select-stale-item
-    on-failure: none (sync failed — Loop retries next cadence)
+    on-failure: none (sync failed - Loop retries next cadence)
 
   select-stale-item:
     purpose: Find one eligible work item
@@ -94,7 +94,7 @@ tasks:
     consumes: { number, title, body }
     produces: { refinedTitle, refinedBody }
     on-success: mark-as-ready
-    on-failure: none (agent failed — issue stays in "refining")
+    on-failure: none (agent failed - issue stays in "refining")
 
   mark-as-ready:
     purpose: Change the issue label from "refining" to "to implement"
@@ -184,7 +184,7 @@ tasks:
   check-health:
     purpose: Verify the target endpoint responds successfully
     produces: { responseTime, statusCode }
-    on-success: none (healthy — iteration terminates)
+    on-success: none (healthy - iteration terminates)
     on-failure: attempt-restart
 
   attempt-restart:
@@ -258,7 +258,7 @@ tasks:
     purpose: Query the deployment's current health
     produces: { deploymentState, version }
     on-success: none (deployment is healthy)
-    on-failure: none (not yet healthy — Loop retries)
+    on-failure: none (not yet healthy - Loop retries)
 
 terminal-outcomes:
   success: Deployment became healthy within the iteration limit

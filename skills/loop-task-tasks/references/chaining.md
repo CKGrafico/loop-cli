@@ -4,7 +4,7 @@
 
 A chain is a **linked list with two transitions** at each node. Each Task has at most two outgoing edges: one for success (`onSuccessTaskId`) and one for failure (`onFailureTaskId`).
 
-The chain is **not** a DAG, a tree, or a general graph — because cycles are possible (though dangerous). It is **not** a workflow engine: no conditional branches beyond success/failure, no joins, no parallel splits, no timers, no event gates.
+The chain is **not** a DAG, a tree, or a general graph - because cycles are possible (though dangerous). It is **not** a workflow engine: no conditional branches beyond success/failure, no joins, no parallel splits, no timers, no event gates.
 
 ## Truth Table: Successor Selection
 
@@ -66,7 +66,7 @@ Or a self-reference: `Task A --onSuccess--> Task A`.
 
 Loop Task does **not** validate against cycles. A cycle causes the chain to execute the same Tasks in an infinite loop within one iteration. The iteration never terminates.
 
-**Cycle prevention is the designer's responsibility.** Never set a Task's successor to point to itself. Never create a circular chain of references. When designing chains, draw the graph and verify it is acyclic. Use shared successors instead of cycles — if Task C needs to redo Task A's work, create a separate Task D that performs the redo.
+**Cycle prevention is the designer's responsibility.** Never set a Task's successor to point to itself. Never create a circular chain of references. When designing chains, draw the graph and verify it is acyclic. Use shared successors instead of cycles - if Task C needs to redo Task A's work, create a separate Task D that performs the redo.
 
 ## Termination
 

@@ -14,7 +14,7 @@ Tasks:
   check-health:
     purpose: Evaluate health of the target service
     produces: nothing (or structured health data)
-    on-success: none (healthy — iteration terminates)
+    on-success: none (healthy - iteration terminates)
     on-failure: alert
 
   alert:
@@ -42,7 +42,7 @@ Tasks:
     purpose: Check whether synchronization is needed
     produces: { hasChanges, lastSyncTimestamp }
     on-success: perform-sync
-    on-failure: none (no changes — clean exit)
+    on-failure: none (no changes - clean exit)
 
   perform-sync:
     purpose: Execute the synchronization
@@ -64,7 +64,7 @@ Tasks:
     on-failure: none
 ```
 
-"No changes needed" is success with no `onSuccess` — a clean exit.
+"No changes needed" is success with no `onSuccess` - a clean exit.
 
 ---
 
@@ -83,7 +83,7 @@ Tasks:
     purpose: Find one eligible work item
     produces: { itemId, itemTitle, itemBody }
     on-success: reserve-item
-    on-failure: none (no eligible items — clean exit)
+    on-failure: none (no eligible items - clean exit)
 
   reserve-item:
     purpose: Mark the item as in-progress
@@ -136,7 +136,7 @@ Tasks:
     purpose: Evaluate whether the condition is satisfied
     produces: { currentState }
     on-success: none (condition met)
-    on-failure: none (not yet met — Loop retries)
+    on-failure: none (not yet met - Loop retries)
 ```
 
 After 30 attempts, the Loop pauses. For "stop on first success", set `maxRuns: 1`.
@@ -251,7 +251,7 @@ Tasks:
     purpose: Check whether eligible work exists
     produces: nothing (no context needed when there is no work)
     on-success: process-work (work found)
-    on-failure: none (no work found — chain terminates, Loop waits)
+    on-failure: none (no work found - chain terminates, Loop waits)
 ```
 
 When "no work" is a normal, expected state, represent it as **failure with no `onFailure`**. The iteration terminates cleanly and the Loop waits for the next cadence.

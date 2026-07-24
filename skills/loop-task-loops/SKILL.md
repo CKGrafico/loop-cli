@@ -10,7 +10,7 @@ description: >
 
 # Loop Task Loops
 
-A Loop is a **cadence** — a recurring schedule that decides when an iteration starts. It decides _when_; its initial Task decides _what_. One Loop runs one iteration at a time, never overlapping.
+A Loop is a **cadence** - a recurring schedule that decides when an iteration starts. It decides _when_; its initial Task decides _what_. One Loop runs one iteration at a time, never overlapping.
 
 ## Pre-Design Questionnaire
 
@@ -91,7 +91,7 @@ For every property including runtime state, see [references/domain-reference.md]
 
 ## Cadence
 
-Cadence is set via `intervalHuman` — a human-readable string like "10s", "20m", "1h", "1d". It is parsed to milliseconds internally. Use "0" for manual loops.
+Cadence is set via `intervalHuman` - a human-readable string like "10s", "20m", "1h", "1d". It is parsed to milliseconds internally. Use "0" for manual loops.
 
 **First iteration**: `immediate = true` starts right away. `immediate = false` waits for a computed phase delay that distributes Loops across their cadence.
 
@@ -124,17 +124,17 @@ See [references/lifecycle.md](references/lifecycle.md) for the full state-transi
 
 Key transitions: running → waiting (execution completes), running → paused (pause), waiting → running (delay or trigger), paused → waiting (resume, continues remaining delay), idle → waiting (play, fresh schedule), any active → idle (stop, clears schedule).
 
-After reaching `maxRuns`, the Loop enters **paused**. There is no "completed" state — `maxRunsReached` distinguishes paused-by-limit from paused-by-user.
+After reaching `maxRuns`, the Loop enters **paused**. There is no "completed" state - `maxRunsReached` distinguishes paused-by-limit from paused-by-user.
 
 ## Non-overlap
 
 A Loop will not start another iteration while one is executing. Separate Loops run independently and concurrently. Tasks within one chain execute sequentially.
 
-Non-overlap does not make side effects safe — two separate Loops modifying the same resource can still interfere. Design Tasks to be idempotent.
+Non-overlap does not make side effects safe - two separate Loops modifying the same resource can still interfere. Design Tasks to be idempotent.
 
 ## Multi-Loop Pipelines
 
-Loops can form a **pipeline** through shared external state markers (labels, tags). One Loop's finalization produces work the next Loop's selection consumes. Each Loop keeps its own cadence, chain, and context — they coordinate at the label boundary, never directly.
+Loops can form a **pipeline** through shared external state markers (labels, tags). One Loop's finalization produces work the next Loop's selection consumes. Each Loop keeps its own cadence, chain, and context - they coordinate at the label boundary, never directly.
 
 This is how production lines work: a refine Loop produces ready items, an implement Loop consumes them, both running at different cadences.
 
@@ -144,7 +144,7 @@ For interface-specific syntax vocabulary for composing concrete loops and multi-
 
 ## Maximum Iterations
 
-`maxRuns` is optional — null means unlimited. Each full iteration (including all chain Tasks) counts as one. Failed iterations count. After reaching `maxRuns`, the Loop pauses. Clearing the flag resets the count and allows play again.
+`maxRuns` is optional - null means unlimited. Each full iteration (including all chain Tasks) counts as one. Failed iterations count. After reaching `maxRuns`, the Loop pauses. Clearing the flag resets the count and allows play again.
 
 ## Dynamic Environment File
 
@@ -155,7 +155,7 @@ GH_TOKEN=ghs_abc123...
 API_KEY=xyz
 ```
 
-Lines starting with `#` are ignored. Values may be quoted. The file is optional — if absent, child tasks use the daemon's environment as-is.
+Lines starting with `#` are ignored. Values may be quoted. The file is optional - if absent, child tasks use the daemon's environment as-is.
 
 ## Antipatterns
 
@@ -163,7 +163,7 @@ Lines starting with `#` are ignored. Values may be quoted. The file is optional 
 - Assuming missed intervals queue (they are skipped).
 - Relying on overlapping execution within one Loop (never happens).
 - Non-idempotent repeated effects (Tasks that create resources must handle "already exists").
-- Using failure for ordinary no-work states (use success with no `onSuccess` — see `loop-task-tasks`).
+- Using failure for ordinary no-work states (use success with no `onSuccess` - see `loop-task-tasks`).
 - Assuming context persists between iterations (discarded each time).
 - Accidental cycles in Task chains (Loop Task does not validate against them).
 - One Loop for unrelated objectives (use separate Loops).

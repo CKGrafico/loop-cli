@@ -1,6 +1,6 @@
-# Task Recipes — Executable Syntax Vocabulary
+# Task Recipes - Executable Syntax Vocabulary
 
-> **Interface-specific reference.** This file contains real executable syntax (gh, az, git, opencode, claude). It is the ONLY file in the skills with interface-specific content. Use these as vocabulary when composing tasks — do not copy them verbatim. Adapt the syntax to the user's tooling answers from the pre-design questionnaire.
+> **Interface-specific reference.** This file contains real executable syntax (gh, az, git, opencode, claude). It is the ONLY file in the skills with interface-specific content. Use these as vocabulary when composing tasks - do not copy them verbatim. Adapt the syntax to the user's tooling answers from the pre-design questionnaire.
 
 This file provides syntax patterns for each position in the hybrid chain. The agent reads these to learn the executable vocabulary, then composes a unique task set based on the questionnaire answers.
 
@@ -75,7 +75,7 @@ opencode run "/plan-goal Implement this issue. Issue title: {{title}} Issue body
 - `{{title}}`, `{{body}}`, `{{number}}` are interpolated from context.
 - Keep the prompt focused on the interpolated values, not vague search instructions.
 - `/plan-goal` is prompt text. The executable remains `opencode`, with `run` as its first argument.
-- No `--model` or `--agent` flags — those are runtime concerns, not task definition concerns.
+- No `--model` or `--agent` flags - those are runtime concerns, not task definition concerns.
 
 ### claude -p
 
@@ -158,7 +158,7 @@ git fetch origin && git rebase origin/main
 gh issue edit {{number}} --remove-label "code:doing" --add-label "code:pick"
 ```
 
-These are sequential **steps** within one recovery Task. The label revert puts the item back in the selection queue for the next iteration. Recovery must be idempotent — if the local state is already clean, the reset is a no-op.
+These are sequential **steps** within one recovery Task. The label revert puts the item back in the selection queue for the next iteration. Recovery must be idempotent - if the local state is already clean, the reset is a no-op.
 
 ### Azure DevOps
 
@@ -247,7 +247,7 @@ A shared terminal Task for the empty-work pattern. Hides the run from history wh
 echo "Nothing to do"
 ```
 
-Set `silentChain: true` on this Task. Every selection Task's `onFailure` can point to the same silent terminator. Never use a silent task as `onSuccess` — it hides runs that did real work.
+Set `silentChain: true` on this Task. Every selection Task's `onFailure` can point to the same silent terminator. Never use a silent task as `onSuccess` - it hides runs that did real work.
 
 ## Cleanup for non-committing tasks
 
@@ -258,7 +258,37 @@ git checkout -- .
 git clean -fd
 ```
 
-This reverts tracked changes and removes untracked files. Never use `git clean -fdx` — the `-x` flag removes ignored files like `node_modules`.
+This reverts tracked changes and removes untracked files. Never use `git clean -fdx` - the `-x` flag removes ignored files like `node_modules`.
+
+## Sub-Issue Linking for Report Tasks
+
+When an AI Task creates a parent report issue (e.g. an audit report) and several child issues from its findings, link the children as sub-issues of the parent. This lets a cleanup loop check `sub_issues_summary` to know when all children are resolved.
+
+### Creating the parent
+
+```
+gh issue create --title "Audit Report: ..." --label "audit:report"
+```
+
+Capture the parent issue number from the URL output. Pass it to the next Task via context.
+
+### Linking children as sub-issues
+
+After each child issue is created, link it to the parent via the GitHub API:
+
+```
+curl -s -X POST "https://api.github.com/repos/$(gh repo view --json nameWithOwner --jq .nameWithOwner)/issues/$PARENT_NUMBER/sub_issues" -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github+json" -d '{"sub_issue_id": CHILD_NUMBER}'
+```
+
+The `$GH_TOKEN` comes from the daemon's env file. Sub-issue linking requires Issues: write permission on the GitHub App.
+
+### Reading sub-issue status in a cleanup loop
+
+```
+curl -s "https://api.github.com/repos/$REPO/issues/$NUMBER" -H "Authorization: token $GH_TOKEN" | python3 -c "import sys,json; d=json.load(sys.stdin); s=d.get('sub_issues_summary',{}); exit(0 if s.get('completed',0)==s.get('total',0) and s.get('total',0)>0 else 1)"
+```
+
+When `completed` equals `total` and `total` is greater than zero, all children are closed and the parent report can be closed. Use this in a daily cleanup loop alongside the audit loop.
 
 ## Token Efficiency and Chain Composition
 
@@ -270,4 +300,4 @@ The token efficiency answer from the questionnaire determines how to compose the
 | Moderate | Concrete CLI tasks for selection, reservation, finalization, and recovery. One AI task for the main work. This is the canonical hybrid chain. |
 | Low | One large AI task that handles searching, processing, and finalization. The AI runner receives the objective and manages everything internally. Least reliable, most token-intensive. |
 
-The critical and moderate strategies use the scaffold pattern: concrete tasks bookend the AI work. The low strategy collapses everything into one AI invocation — simpler to design but harder to debug and recover from failure.
+The critical and moderate strategies use the scaffold pattern: concrete tasks bookend the AI work. The low strategy collapses everything into one AI invocation - simpler to design but harder to debug and recover from failure.

@@ -30,7 +30,7 @@ The Task expresses the outcome as success or failure, selecting one of the two a
 selection-task:
   purpose: Find one eligible work item
   on-success: process-work
-  on-failure: none (no work — chain terminates, Loop waits for next cadence)
+  on-failure: none (no work - chain terminates, Loop waits for next cadence)
 ```
 
 ### Continue only when synchronization is needed
@@ -40,7 +40,7 @@ check-sync:
   purpose: Compare local and remote state
   produces: { needsSync, lastSyncTimestamp }
   on-success: perform-sync
-  on-failure: none (already synchronized — chain terminates)
+  on-failure: none (already synchronized - chain terminates)
 ```
 
 ### Route to recovery when validation fails
@@ -67,7 +67,7 @@ find-work:
 ```
 health-check:
   purpose: Evaluate service health
-  on-success: none (healthy — chain terminates)
+  on-success: none (healthy - chain terminates)
   on-failure: attempt-recovery
 ```
 

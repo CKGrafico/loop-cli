@@ -2,7 +2,7 @@
 
 ## Label-Based State Machines
 
-Loop Task has no persistent per-item state. Each iteration starts with a fresh context, and context is discarded after completion. To track where a work item is in its lifecycle, use **external state markers** — labels, tags, statuses, or flags on the items themselves.
+Loop Task has no persistent per-item state. Each iteration starts with a fresh context, and context is discarded after completion. To track where a work item is in its lifecycle, use **external state markers** - labels, tags, statuses, or flags on the items themselves.
 
 A **label state machine** treats external labels as the work-item's state. The selection Task queries for items with a specific label. The reservation Task transitions the label. The chain processes the item. Finalization transitions the label to its terminal state. Recovery reverts the label to its selection state.
 
@@ -19,14 +19,14 @@ Each label represents a stage. The selection Task selects items at `pick`. The r
 ### Rules
 
 - The selection Task queries the **entry label** (e.g., `pick`).
-- The reservation Task removes the entry label and adds the **reservation label** (e.g., `doing`) — this prevents duplicate selection by other Loops or manual triggers.
+- The reservation Task removes the entry label and adds the **reservation label** (e.g., `doing`) - this prevents duplicate selection by other Loops or manual triggers.
 - Finalization transitions the label to the **next stage** (e.g., `pr`).
 - Recovery reverts the label back to the entry label, making the item eligible again.
-- A gate Task (onSuccess) that finds no work exits non-zero with no `onFailure` — the chain terminates and the Loop waits for the next cadence.
+- A gate Task (onSuccess) that finds no work exits non-zero with no `onFailure` - the chain terminates and the Loop waits for the next cadence.
 
 ### Why labels work
 
-Labels exist on the work items, external to Loop Task. A crashed iteration leaves the item in `doing` — the next iteration will skip it. Recovery explicitly reverts the label, returning the item to the pool. Multiple Loops can coordinate through shared labels: one Loop's finalization label is another Loop's selection label.
+Labels exist on the work items, external to Loop Task. A crashed iteration leaves the item in `doing` - the next iteration will skip it. Recovery explicitly reverts the label, returning the item to the pool. Multiple Loops can coordinate through shared labels: one Loop's finalization label is another Loop's selection label.
 
 ## Multi-Loop Pipelines
 
@@ -39,7 +39,7 @@ Loop B (consumer):  selects items labeled "ready for B", processes, labels outpu
 
 ### Staging
 
-Each Loop is independent — it has its own cadence, its own chain, its own failure handling. But they share a label vocabulary. The producer Loop's finalization Task adds a label the consumer Loop's selection Task queries for.
+Each Loop is independent - it has its own cadence, its own chain, its own failure handling. But they share a label vocabulary. The producer Loop's finalization Task adds a label the consumer Loop's selection Task queries for.
 
 | Loop role | Selection label | Finalization label | Cadence |
 |---|---|---|---|
@@ -75,7 +75,7 @@ Task 4 (recovery, concrete):
   Reverts local changes, reverts label to "pick"
 ```
 
-Steps 1 and 2 within the selection Task execute sequentially. The selection step produces context (the item data). The reservation step consumes that context (the item number) to transition the label. If the selection step finds no work, it exits non-zero — the chain terminates without running the reservation step.
+Steps 1 and 2 within the selection Task execute sequentially. The selection step produces context (the item data). The reservation step consumes that context (the item number) to transition the label. If the selection step finds no work, it exits non-zero - the chain terminates without running the reservation step.
 
 For the empty-work pattern and condition modelling details, see [conditions.md](conditions.md) in the Tasks skill.
 
@@ -95,7 +95,7 @@ After recovery, the item is eligible for the next iteration's selection Task. Th
 
 - The recovery Task consumes `{{number}}` (or whatever key identifies the work item) from the context accumulated before the failure.
 - The recovery Task is **idempotent**: if the local state is already clean, the reset is a no-op. If the label was already reverted, the transition is a no-op.
-- The recovery Task is concrete — it does not invoke an AI agent. Recovery must be deterministic and fast.
+- The recovery Task is concrete - it does not invoke an AI agent. Recovery must be deterministic and fast.
 
 For AI-specific recovery patterns (when the Work Task is an AI agent), see [ai-agent-patterns.md](ai-agent-patterns.md).
 
@@ -109,6 +109,6 @@ Loop B selection Task → onFailure → silent terminator
 Loop C selection Task → onFailure → silent terminator
 ```
 
-The silent terminator (`silentChain: true`) hides the entire run from the right panel when no work is found. Always use on `onFailure` only — never on `onSuccess` of real-work tasks. Every selection Task that uses the empty-work pattern references the same terminator.
+The silent terminator (`silentChain: true`) hides the entire run from the right panel when no work is found. Always use on `onFailure` only - never on `onSuccess` of real-work tasks. Every selection Task that uses the empty-work pattern references the same terminator.
 
 For the empty-work iteration pattern and condition modelling, load **`loop-task-tasks`**.

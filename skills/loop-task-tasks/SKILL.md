@@ -11,7 +11,7 @@ description: >
 
 # Loop Task Tasks
 
-A Task is one unit of executable work with a binary result: success or failure. Tasks exist independently from Loops — the same Task can be the initial Task of multiple Loops or the chain successor of multiple other Tasks.
+A Task is one unit of executable work with a binary result: success or failure. Tasks exist independently from Loops - the same Task can be the initial Task of multiple Loops or the chain successor of multiple other Tasks.
 
 ## Pre-Design Questionnaire
 
@@ -92,9 +92,9 @@ For every property, see [references/domain-reference.md](references/domain-refer
 
 - Exit code 0 = success. Non-zero = failure.
 - A process that cannot start or is killed = failure.
-- stderr does not affect the result — only the exit code matters.
+- stderr does not affect the result - only the exit code matters.
 
-A Task's **domain outcome** must be translated into the exit code. When "no work found" should terminate the chain cleanly, the Task exits non-zero with no `onFailure` defined — the chain ends, the Loop waits for the next cadence.
+A Task's **domain outcome** must be translated into the exit code. When "no work found" should terminate the chain cleanly, the Task exits non-zero with no `onFailure` defined - the chain ends, the Loop waits for the next cadence.
 
 ## Chaining
 
@@ -125,7 +125,7 @@ After each Task with chain successors (or multi-step/parallel commands), stdout 
 
 Before every Task executes, `{{key}}` placeholders in its payload are replaced with context values. Missing keys produce empty strings. Values are shell-escaped.
 
-Context survives across success and failure transitions within the same iteration. Context is discarded after the iteration completes — never persisted, never shared between Loops.
+Context survives across success and failure transitions within the same iteration. Context is discarded after the iteration completes - never persisted, never shared between Loops.
 
 For complete parsing rules, merge semantics, and edge cases, see [references/context.md](references/context.md).
 
@@ -141,13 +141,13 @@ For use-case tables, tri-state workarounds, and the empty-work pattern, see [ref
 
 Tasks within a chain execute **sequentially**. Each Task has at most one successor per result. Multiple Loops may run independently.
 
-Loop Task does not provide native parallel branches, AND/OR joins, fan-out, or fan-in. Shell operators (`&&`, `||`) within a Task's payload are internal to that subprocess — Loop Task observes only the final exit code.
+Loop Task does not provide native parallel branches, AND/OR joins, fan-out, or fan-in. Shell operators (`&&`, `||`) within a Task's payload are internal to that subprocess - Loop Task observes only the final exit code.
 
 Commands within a single Task Step execute in parallel (`Promise.allSettled`), but this is an implementation detail of multi-step Tasks.
 
 ## AI Agent Tasks
 
-An AI Task — one whose payload invokes an agent or language model — is expensive and stochastic. **Scaffold** it: concrete Tasks before it feed structured context via interpolation, concrete Tasks after it finalize or revert its output.
+An AI Task - one whose payload invokes an agent or language model - is expensive and stochastic. **Scaffold** it: concrete Tasks before it feed structured context via interpolation, concrete Tasks after it finalize or revert its output.
 
 The canonical hybrid chain: selection (concrete) → reservation (concrete) → AI work → finalization (concrete) on success, recovery (concrete) on failure. The AI Task is the branch point.
 

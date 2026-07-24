@@ -8,7 +8,7 @@ Exhaustive reference for every meaningful Loop property.
 |---|---|---|---|---|---|---|
 | id | Unique identifier | 8-char hex string | Auto-generated | Immutable | Should not be reused after deletion | Treat as opaque |
 | description | Human-readable statement of the recurring objective | Non-empty string | Required | Visible in listings and logs; no execution effect | Empty descriptions are rejected at creation | Write a clear one-sentence goal |
-| intervalHuman | Human-readable cadence — the single source of truth for scheduling | Strings like "10s", "20m", "1h", "1d", "1w", or "0" for manual | Required in recipes | Parsed to milliseconds internally; "0" = manual-only | Use this instead of raw ms |
+| intervalHuman | Human-readable cadence - the single source of truth for scheduling | Strings like "10s", "20m", "1h", "1d", "1w", or "0" for manual | Required in recipes | Parsed to milliseconds internally; "0" = manual-only | Use this instead of raw ms |
 | taskId | References the initial Task for each iteration | Valid Task ID string, or null | null | When null, the Loop uses its inline command | If the referenced Task is deleted, the Loop fails at execution time | Prefer named Tasks over inline commands for reusability |
 | command | Inline executable payload (used when taskId is null) | Non-empty string | "" (empty) | Executes as the initial work of each iteration | Ignored when taskId references a valid Task | Use for simple one-off Loops; prefer Tasks for chains |
 | commandArgs | Arguments to the inline payload | Array of strings | [] | Passed alongside command | Ignored when taskId references a valid Task | Split payload into command + args for clarity |

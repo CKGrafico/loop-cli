@@ -14,7 +14,7 @@ Exhaustive reference for every meaningful Task property.
 | onSuccessTaskId | Successor on success | Valid Task ID or null | null | When the Task succeeds and this is set, the referenced Task executes next | If the referenced Task does not exist, the chain terminates | Multiple Tasks can reference the same successor |
 | onFailureTaskId | Successor on failure | Valid Task ID or null | null | When the Task fails and this is set, the referenced Task executes next | If the referenced Task does not exist, the chain terminates | Multiple Tasks can reference the same successor |
 | context | Initial key-value pairs seeded into the iteration | Flat object (string/number/boolean/null values) | undefined | Merged into the iteration context before the Task executes; overridden by the Loop's context for overlapping keys | Nested objects and arrays are rejected by validation; values must be primitives | When reused, the same context seeds apply across all consumers |
-| silentChain | Hide this run from the history panel | true or false | false | When any silent task executes during a chain, the entire run is hidden from the right panel run history | Never set a silent task as the `onSuccess` of a real-work task — it would hide runs that did meaningful work | Use for "no work found" terminators on `onFailure` only |
+| silentChain | Hide this run from the history panel | true or false | false | When any silent task executes during a chain, the entire run is hidden from the right panel run history | Never set a silent task as the `onSuccess` of a real-work task - it would hide runs that did meaningful work | Use for "no work found" terminators on `onFailure` only |
 | steps | Multi-step execution definition | Array of TaskStep, or undefined | undefined | Steps run sequentially; commands within a step run in parallel | When absent, a single step is created from command+commandArgs | Advanced feature |
 | createdAt | When the Task was created | ISO 8601 string | Auto-generated | Display only | Immutable | None |
 
@@ -67,7 +67,7 @@ When stdout is not captured, it is streamed directly to the log file without con
 | Rule | Enforcement |
 |---|---|
 | `command` must not be empty when no `taskId` is provided on the Loop | Validated at Loop creation |
-| `onSuccessTaskId` must reference an existing Task, or be null | Not validated — chain terminates if missing |
-| `onFailureTaskId` must reference an existing Task, or be null | Not validated — chain terminates if missing |
+| `onSuccessTaskId` must reference an existing Task, or be null | Not validated - chain terminates if missing |
+| `onFailureTaskId` must reference an existing Task, or be null | Not validated - chain terminates if missing |
 | `context` values must be primitives (no nested objects or arrays) | Validated at creation |
-| No cycle detection on chain references | Not validated — cycles cause infinite execution |
+| No cycle detection on chain references | Not validated - cycles cause infinite execution |

@@ -1,6 +1,6 @@
-# Loop Recipes — Pipeline and Label State Machine Vocabulary
+# Loop Recipes - Pipeline and Label State Machine Vocabulary
 
-> **Interface-specific reference.** This file contains real executable syntax (gh, az, git, opencode, claude). It is the ONLY file in the skills with interface-specific content. Use these as vocabulary when composing multi-loop pipelines — do not copy them verbatim. Adapt the syntax to the user's tooling answers from the pre-design questionnaire.
+> **Interface-specific reference.** This file contains real executable syntax (gh, az, git, opencode, claude). It is the ONLY file in the skills with interface-specific content. Use these as vocabulary when composing multi-loop pipelines - do not copy them verbatim. Adapt the syntax to the user's tooling answers from the pre-design questionnaire.
 
 This file provides patterns for label-based state machines and multi-loop pipeline coordination. The agent reads these to learn how loops coordinate through shared labels, then composes a unique pipeline.
 
@@ -97,7 +97,7 @@ Loops coordinate through shared labels. One Loop's finalization label is another
 └──────────────────┘                     └──────────────────┘
 ```
 
-The refine Loop's AI Task rewrites the issue and adds the `code:pick` label. The implement Loop's selection Task queries for `code:pick`. They never communicate directly — they coordinate at the label boundary.
+The refine Loop's AI Task rewrites the issue and adds the `code:pick` label. The implement Loop's selection Task queries for `code:pick`. They never communicate directly - they coordinate at the label boundary.
 
 ### Pipeline: Improvements → Refine → Implement
 
@@ -106,7 +106,7 @@ Three loops forming a production line:
 ```
 Improvements Loop (every 6h)
   │  opencode run "Audit code, create issues with code:pick"
-  │  (no chain — single AI task)
+  │  (no chain - single AI task)
   │
   ▼  produces issues with code:pick / refine:pick
   
@@ -171,5 +171,5 @@ The user transitions the label from `refine:questions` to `refine:answers` by ad
 1. **Read the questionnaire answers** to determine which executable syntax (gh, az, custom) and which AI runner (opencode, claude, aider) to use.
 2. **Read the task recipes** in `loop-task-tasks/references/recipes.md` for the syntax of individual task positions (selection, reservation, AI work, finalization, recovery).
 3. **Compose** a unique chain based on the user's label scheme, token efficiency priority, and pipeline structure. Do not copy these recipes verbatim.
-4. **The label boundary is the coordination point.** Loops do not communicate directly — they coordinate through shared labels on work items.
+4. **The label boundary is the coordination point.** Loops do not communicate directly - they coordinate through shared labels on work items.
 5. **Token efficiency determines chain granularity.** Critical = many small concrete tasks. Moderate = hybrid chain. Low = one big AI task.

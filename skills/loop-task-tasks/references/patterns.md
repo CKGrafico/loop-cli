@@ -8,7 +8,7 @@
 select-work:
   purpose: Find one eligible work item
   on-success: process-work
-  on-failure: none (no work found — clean exit)
+  on-failure: none (no work found - clean exit)
 
 process-work:
   purpose: Execute the work
@@ -110,7 +110,7 @@ attempt-operation:
 recover-operation:
   purpose: Undo partial effects and restore a clean state
   consumes: { operationId }
-  on-success: none (recovered — iteration terminates)
+  on-success: none (recovered - iteration terminates)
   on-failure: escalate-failure
 
 escalate-failure:
@@ -212,7 +212,7 @@ nothing-to-do:
   on-failure: none
 ```
 
-`silentChain: true` hides the entire run from the right panel when this task executes. Only use on `onFailure` paths (e.g. when a selection task finds no issues). Never set a silent task as the `onSuccess` of real-work tasks — it would hide runs that did meaningful work.
+`silentChain: true` hides the entire run from the right panel when this task executes. Only use on `onFailure` paths (e.g. when a selection task finds no issues). Never set a silent task as the `onSuccess` of real-work tasks - it would hide runs that did meaningful work.
 
 ---
 

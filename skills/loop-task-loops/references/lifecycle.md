@@ -85,7 +85,7 @@ The Loop calculates the next cadence point and enters **waiting**. The chunked s
 ## Pause Semantics
 
 - Pause preserves `remainingDelayMs`. On resume, the delay continues from that point.
-- Schedule continues from the original timeline — resuming does not reset.
+- Schedule continues from the original timeline - resuming does not reset.
 - `pause(true)` also interrupts a running Task by aborting its subprocess. `pause(false)` lets the current iteration complete before pausing.
 
 ## Stop Semantics
@@ -94,7 +94,7 @@ Stop clears the schedule: `nextRunAt` and `remainingDelayMs` set to null, `sessi
 
 ## Play Semantics (from idle)
 
-Play creates a fresh schedule from the current time. `sessionStartedAt` set to now. A new phase delay is computed. `maxRuns` is respected — `playLoop` returns false if `maxRunsReached` is true. Differs from resume, which continues from the interrupted point.
+Play creates a fresh schedule from the current time. `sessionStartedAt` set to now. A new phase delay is computed. `maxRuns` is respected - `playLoop` returns false if `maxRunsReached` is true. Differs from resume, which continues from the interrupted point.
 
 ## Trigger Semantics
 

@@ -51,7 +51,7 @@ tasks:
     consumes: { statusCode, responseTime }
     # Internally: if statusCode >= 200 and < 300 then exit 0; else exit 1
     on-success: none (healthy)
-    on-failure: none (unhealthy — no recovery defined)
+    on-failure: none (unhealthy - no recovery defined)
 ```
 
 ---
@@ -230,4 +230,4 @@ tasks:
     on-failure: none
 ```
 
-The "already exists" path is not an error — it is a successful state.
+The "already exists" path is not an error - it is a successful state.

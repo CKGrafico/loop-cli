@@ -87,7 +87,7 @@ before deletion:
     - purpose: Monitor legacy data
       project: Legacy Pipeline
       cadence: Every 20m
-      # No explicit cwd — relies on Project's directory
+      # No explicit cwd - relies on Project's directory
 
 after deleting "Legacy Pipeline":
   projects:
@@ -100,7 +100,7 @@ after deleting "Legacy Pipeline":
 
     - purpose: Monitor legacy data
       project: Default           # reassigned
-      # Falls back to Default's directory or process cwd — may break!
+      # Falls back to Default's directory or process cwd - may break!
 ```
 
 Loops with explicit `cwd` are safe. Loops that relied on the Project's `directory` may break.

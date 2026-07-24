@@ -29,11 +29,11 @@ Every installation has exactly one default Project (`id: "default"`, `color: "#f
 
 ## Membership
 
-Each Loop belongs to exactly one Project. Tasks are global — not scoped to any Project. The same Task can be the initial Task of Loops in different Projects.
+Each Loop belongs to exactly one Project. Tasks are global - not scoped to any Project. The same Task can be the initial Task of Loops in different Projects.
 
 ### Working directory resolution
 
-1. Loop's `cwd` (if set) — highest priority.
+1. Loop's `cwd` (if set) - highest priority.
 2. Project's `directory`.
 3. Process working directory.
 
@@ -68,7 +68,7 @@ For concrete examples of each pattern, see [references/examples.md](references/e
 ## Antipatterns
 
 - Over-fragmentation (a Project for every single Loop adds overhead without benefit).
-- Using Projects as a security boundary (no isolation exists — use separate installations).
+- Using Projects as a security boundary (no isolation exists - use separate installations).
 - Relying on the default Project for production Loops (it is for prototyping).
 - Deleting a Project without considering working directory fallout.
 - Expecting Project-scoped isolation of side effects.
