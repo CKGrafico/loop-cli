@@ -1,6 +1,6 @@
 {
   "name": "loop-task",
-  "version": "2.2.16",
+  "version": "2.2.17",
   "description": "Loop engineering toolkit. Run any command on a cadence, in the background, managed from a terminal board. Schedule tests, builds, syncs, or agent prompts.",
   "type": "module",
   "bin": {
