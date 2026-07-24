@@ -185,9 +185,17 @@ export class OpenTelemetryAdapter implements Telemetry {
       const isGrpc = settings.telemetryProtocol === "grpc";
       const headers = this.resolveHeaders();
 
+      const endpoint = settings.telemetryEndpoint ?? "";
+      const tracesUrl = endpoint.endsWith("/v1/traces")
+        ? endpoint
+        : `${endpoint}/v1/traces`;
+      const metricsUrl = endpoint.endsWith("/v1/metrics")
+        ? endpoint
+        : `${endpoint}/v1/metrics`;
+
       const traceExporter = isGrpc
         ? new OTLPTraceExporterGrpc({ url: settings.telemetryEndpoint })
-        : new OTLPTraceExporter({ url: settings.telemetryEndpoint, headers });
+        : new OTLPTraceExporter({ url: tracesUrl, headers });
 
       const spanProcessor = new BatchSpanProcessor(traceExporter, {
         maxQueueSize: 2048,
@@ -204,7 +212,7 @@ export class OpenTelemetryAdapter implements Telemetry {
 
       const metricExporter = isGrpc
         ? new OTLPMetricExporterGrpc({ url: settings.telemetryEndpoint })
-        : new OTLPMetricExporter({ url: settings.telemetryEndpoint, headers });
+        : new OTLPMetricExporter({ url: metricsUrl, headers });
 
       const metricReader = new PeriodicExportingMetricReader({
         exporter: metricExporter,
