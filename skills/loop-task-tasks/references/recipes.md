@@ -241,13 +241,24 @@ git checkout main
 
 ## Silent Terminator
 
-A shared terminal Task for the empty-work pattern. Silenced to avoid log noise.
+A shared terminal Task for the empty-work pattern. Hides the run from history when no work is found.
 
 ```
 echo "Nothing to do"
 ```
 
 Set `silentChain: true` on this Task. Every selection Task's `onFailure` can point to the same silent terminator. Never use a silent task as `onSuccess` — it hides runs that did real work.
+
+## Cleanup for non-committing tasks
+
+Tasks that invoke AI agents (like refinement loops) may create `.tmp` folders or other artifacts without committing. These leave the working tree dirty, causing the next iteration's preflight to fail. Always add cleanup to verify or finalize tasks after AI work:
+
+```
+git checkout -- .
+git clean -fd
+```
+
+This reverts tracked changes and removes untracked files. Never use `git clean -fdx` — the `-x` flag removes ignored files like `node_modules`.
 
 ## Token Efficiency and Chain Composition
 

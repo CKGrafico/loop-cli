@@ -18,6 +18,16 @@ git status --porcelain && git switch main && git fetch origin && git rebase orig
 
 The clean check prevents an automated Task from overwriting local work. Fetch + rebase prevents an unattended merge. If either check fails, stop and report the exact next action.
 
+## Post-task cleanup
+
+AI agent and refinement Tasks may create temporary files, `.tmp` folders, or other artifacts. These leave the working tree dirty, which causes the next iteration's preflight to fail. Always clean up after tasks that are not meant to commit or push:
+
+```sh
+git checkout -- . && git clean -fd
+```
+
+Add this to verify or finalize tasks that follow AI work. `git checkout -- .` reverts tracked file changes, `git clean -fd` removes untracked files and directories. Never use `git clean -fdx` (the `-x` flag removes ignored files like `node_modules`).
+
 ## Timeouts and retries
 
 Every network, AI, build, and test Task defines:
