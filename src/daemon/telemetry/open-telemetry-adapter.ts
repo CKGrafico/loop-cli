@@ -16,6 +16,8 @@ import { SPAN_NAMES, CORRELATION_KEYS, METRIC_NAMES } from "./telemetry-types.js
 import { detectAgentIntegration, getAgentIntegrations } from "./agent-integrations/index.js";
 
 import { NodeSDK } from "@opentelemetry/sdk-node";
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
@@ -103,6 +105,7 @@ class OtelSpan implements TelemetrySpan {
  */
 export class OpenTelemetryAdapter implements Telemetry {
   private sdk: NodeSDK | null = null;
+  private tracerProvider: NodeTracerProvider | null = null;
   private tracer: Tracer;
   private meter: Meter;
   private settings: DaemonSettings;
@@ -185,6 +188,17 @@ export class OpenTelemetryAdapter implements Telemetry {
       const traceExporter = isGrpc
         ? new OTLPTraceExporterGrpc({ url: settings.telemetryEndpoint })
         : new OTLPTraceExporter({ url: settings.telemetryEndpoint, headers });
+
+      const tracerProvider = new NodeTracerProvider({
+        resource,
+        spanProcessors: [new BatchSpanProcessor(traceExporter, {
+          maxQueueSize: 2048,
+          scheduledDelayMillis: 5000,
+          maxExportBatchSize: 512,
+        })],
+      });
+      this.tracerProvider = tracerProvider;
+      tracerProvider.register();
 
       const metricExporter = isGrpc
         ? new OTLPMetricExporterGrpc({ url: settings.telemetryEndpoint })
@@ -478,20 +492,25 @@ export class OpenTelemetryAdapter implements Telemetry {
   async flush(): Promise<void> {
     if (!this.sdk) return;
     try {
+      const flushes: Promise<void>[] = [];
+
+      if (this.tracerProvider) {
+        flushes.push(this.tracerProvider.forceFlush());
+      }
+
       const sdkInternals = this.sdk as unknown as {
         _tracerProvider?: { forceFlush?: () => Promise<void> };
         _meterProvider?: { forceFlush?: () => Promise<void> };
       };
-      const providers = [sdkInternals._tracerProvider, sdkInternals._meterProvider]
-        .filter((provider): provider is { forceFlush: () => Promise<void> } =>
-          typeof provider?.forceFlush === "function"
-        );
+      if (typeof sdkInternals._meterProvider?.forceFlush === "function") {
+        flushes.push(sdkInternals._meterProvider.forceFlush());
+      }
 
-      if (providers.length === 0) {
+      if (flushes.length === 0) {
         throw new Error("OpenTelemetry SDK providers do not support forceFlush");
       }
 
-      await Promise.all(providers.map((provider) => provider.forceFlush()));
+      await Promise.all(flushes);
       daemonLog("telemetry: SDK flushed");
       this.lastSuccessfulExport = new Date().toISOString();
       if (this.status.exporterState !== "healthy") {
@@ -505,6 +524,15 @@ export class OpenTelemetryAdapter implements Telemetry {
   }
 
   async shutdown(): Promise<void> {
+    if (this.tracerProvider) {
+      try {
+        await this.tracerProvider.forceFlush();
+        await this.tracerProvider.shutdown();
+      } catch {
+        // best effort
+      }
+      this.tracerProvider = null;
+    }
     if (!this.sdk) return;
     try {
       await this.sdk.shutdown();
