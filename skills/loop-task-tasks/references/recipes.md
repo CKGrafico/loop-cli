@@ -21,7 +21,7 @@ Query for eligible work items. Output must be JSON so Loop Task can parse it int
 ### GitHub Issues
 
 ```
-sh -c 'issue=$(gh issue list --label "code:pick" --state open --limit 1000 --json number,title,body --jq ''sort_by(.number) | .[0] // empty | {number,title,body}''); test -n "$issue" && printf "%s\n" "$issue"'
+sh -c 'number=$(gh issue list --label "code:pick" --state open --limit 1 --json number --jq ''.[0].number''); test -n "$number" || exit 75; body=$(gh issue view "$number" --json number,title,body --jq ''{number,title,body}''); gh issue edit "$number" --add-label code:doing --remove-label code:pick >/dev/null; printf "%s\n" "$body"'
 ```
 
 - `--state open` excludes closed work.
@@ -185,19 +185,19 @@ Verification is its own concrete Task between AI work and finalization. It must 
 For this repository, run the OpenSpec predicate inside an explicit shell Task:
 
 ```
-sh -c 'openspec list --json | jq -e ''(.changes | length) == 0'' >/dev/null'
+sh -c 'openspec list --json | python3 -c ''import sys,json; exit(0 if len(json.load(sys.stdin).get("changes",[]))==0 else 1)'''
 ```
 
 Quick verification gate:
 
 ```
-sh -c 'openspec list --json | jq -e ''(.changes | length) == 0'' >/dev/null && pnpm exec eslint --max-warnings 0 src/ tests/ && pnpm exec tsc --noEmit'
+sh -c 'openspec list --json | python3 -c ''import sys,json; exit(0 if len(json.load(sys.stdin).get("changes",[]))==0 else 1)'' && pnpm exec eslint --max-warnings 0 src/ tests/ && pnpm exec tsc --noEmit'
 ```
 
 Full verification gate:
 
 ```
-sh -c 'openspec list --json | jq -e ''(.changes | length) == 0'' >/dev/null && pnpm exec eslint --max-warnings 0 src/ tests/ && pnpm exec tsc --noEmit && pnpm run test && pnpm run build'
+sh -c 'openspec list --json | python3 -c ''import sys,json; exit(0 if len(json.load(sys.stdin).get("changes",[]))==0 else 1)'' && pnpm exec eslint --max-warnings 0 src/ tests/ && pnpm exec tsc --noEmit && pnpm run test && pnpm run build'
 ```
 
 Do not compare serialized OpenSpec output to `[]`: `openspec list --json` returns `{ "changes": [] }`. Do not store the pipeline as raw `openspec` arguments. For Windows, use the equivalent PowerShell command.

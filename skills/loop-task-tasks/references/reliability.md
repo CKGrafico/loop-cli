@@ -4,7 +4,7 @@ Use this reference when a Task touches a repository, external service, or persis
 
 ## Environment
 
-Collect operating system, shell, package manager, issue tracker CLI, and AI runner before composing commands when the user has not supplied them. A Loop Task passes command arguments directly, so shell syntax belongs inside an explicit shell command such as `sh -c`. Declare optional tools such as `jq` instead of making them implicit.
+Collect operating system, shell, package manager, issue tracker CLI, and AI runner before composing commands when the user has not supplied them. A Loop Task passes command arguments directly, so shell syntax belongs inside an explicit shell command such as `sh -c`. Do not depend on optional tools like system `jq`; use `gh --jq` or `python3 -c` instead.
 
 Keep executables separate from prompts. `opencode run "/plan-goal ..."` is valid. `/plan-goal` alone is not an executable. The same rule applies to other slash commands and CLI prompt modes.
 

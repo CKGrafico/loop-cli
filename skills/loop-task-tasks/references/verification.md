@@ -24,23 +24,23 @@ A verification Task must:
 Use a shell Task on POSIX systems. Keep the whole pipeline inside `sh -c`:
 
 ```sh
-sh -c 'openspec list --json | jq -e ''(.changes | length) == 0'' >/dev/null'
+sh -c 'openspec list --json | python3 -c ''import sys,json; exit(0 if len(json.load(sys.stdin).get("changes",[]))==0 else 1)'''
 ```
 
-Do not store `openspec list --json | jq ...` as one ordinary command. Loop Task passes command arguments directly unless the Task explicitly invokes a shell. On Windows, use the PowerShell equivalent or a project script supplied by the repository.
+Do not store `openspec list --json | python3 ...` as one ordinary command. Loop Task passes command arguments directly unless the Task explicitly invokes a shell. On Windows, use the PowerShell equivalent or a project script supplied by the repository.
 
 ## Verification levels
 
 Quick gate for code changes:
 
 ```sh
-sh -c 'openspec list --json | jq -e ''(.changes | length) == 0'' >/dev/null && pnpm exec eslint --max-warnings 0 src/ tests/ && pnpm exec tsc --noEmit'
+sh -c 'openspec list --json | python3 -c ''import sys,json; exit(0 if len(json.load(sys.stdin).get("changes",[]))==0 else 1)'' && pnpm exec eslint --max-warnings 0 src/ tests/ && pnpm exec tsc --noEmit'
 ```
 
 Full repository gate:
 
 ```sh
-sh -c 'openspec list --json | jq -e ''(.changes | length) == 0'' >/dev/null && pnpm exec eslint --max-warnings 0 src/ tests/ && pnpm exec tsc --noEmit && pnpm run test && pnpm run build'
+sh -c 'openspec list --json | python3 -c ''import sys,json; exit(0 if len(json.load(sys.stdin).get("changes",[]))==0 else 1)'' && pnpm exec eslint --max-warnings 0 src/ tests/ && pnpm exec tsc --noEmit && pnpm run test && pnpm run build'
 ```
 
 Prefer existing `package.json` scripts when they express the required check. Do not add `npx` to a canonical command when the repository declares another package manager.
