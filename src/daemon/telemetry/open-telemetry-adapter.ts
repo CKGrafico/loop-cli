@@ -189,13 +189,15 @@ export class OpenTelemetryAdapter implements Telemetry {
         ? new OTLPTraceExporterGrpc({ url: settings.telemetryEndpoint })
         : new OTLPTraceExporter({ url: settings.telemetryEndpoint, headers });
 
+      const spanProcessor = new BatchSpanProcessor(traceExporter, {
+        maxQueueSize: 2048,
+        scheduledDelayMillis: 5000,
+        maxExportBatchSize: 512,
+      });
+
       const tracerProvider = new NodeTracerProvider({
         resource,
-        spanProcessors: [new BatchSpanProcessor(traceExporter, {
-          maxQueueSize: 2048,
-          scheduledDelayMillis: 5000,
-          maxExportBatchSize: 512,
-        })],
+        spanProcessors: [spanProcessor],
       });
       this.tracerProvider = tracerProvider;
       tracerProvider.register();
@@ -211,7 +213,6 @@ export class OpenTelemetryAdapter implements Telemetry {
 
       this.sdk = new NodeSDK({
         resource,
-        traceExporter,
         metricReader,
         instrumentations: [],
       });
