@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 import { Writable } from "node:stream";
 import { execa, type ResultPromise } from "execa";
 import type { ExecutionResult } from "../../types.js";
@@ -11,6 +12,7 @@ import { killProcessTree } from "./process-tree.js";
 import type { Telemetry, TelemetrySpan } from "../../daemon/telemetry/index.js";
 import type { CommandResult } from "../../daemon/telemetry/telemetry-types.js";
 import { getAgentIntegrations } from "../../daemon/telemetry/agent-integrations/index.js";
+import { getDataDir } from "../../shared/config/paths.js";
 
 function quoteArg(arg: string): string {
   if (arg.length === 0) return "''";
@@ -43,6 +45,26 @@ export function childEnv(): NodeJS.ProcessEnv {
     NODE_ENV: undefined,
     LOOP_TASK_DEFAULTED_NODE_ENV: undefined,
   };
+}
+
+function loadEnvFile(): Record<string, string> {
+  try {
+    const envPath = path.join(getDataDir(), "env");
+    const content = fs.readFileSync(envPath, "utf-8");
+    const env: Record<string, string> = {};
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eq = trimmed.indexOf("=");
+      if (eq < 0) continue;
+      const key = trimmed.slice(0, eq).trim();
+      const value = trimmed.slice(eq + 1).trim().replace(/^['"]|['"]$/g, "");
+      if (key) env[key] = value;
+    }
+    return env;
+  } catch {
+    return {};
+  }
 }
 
 const activePids = new Set<number>();
@@ -152,8 +174,10 @@ export async function executeCommand(
   }
 
   const baseEnv = childEnv();
+  const fileEnv = loadEnvFile();
   const mergedEnv: Record<string, string> = {
     ...(baseEnv as Record<string, string>),
+    ...fileEnv,
     ...telemetryEnv,
   };
 

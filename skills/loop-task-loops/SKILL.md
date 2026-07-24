@@ -146,6 +146,17 @@ For interface-specific syntax vocabulary for composing concrete loops and multi-
 
 `maxRuns` is optional — null means unlimited. Each full iteration (including all chain Tasks) counts as one. Failed iterations count. After reaching `maxRuns`, the Loop pauses. Clearing the flag resets the count and allows play again.
 
+## Dynamic Environment File
+
+The daemon reads `~/.loop-cli/env` before spawning each child task. This file is a simple `KEY=VALUE` format, refreshed by an external script or a token-refresh Loop. Use this for short-lived credentials (e.g. GitHub App tokens) that expire faster than the daemon's lifetime.
+
+```
+GH_TOKEN=ghs_abc123...
+API_KEY=xyz
+```
+
+Lines starting with `#` are ignored. Values may be quoted. The file is optional — if absent, child tasks use the daemon's environment as-is.
+
 ## Antipatterns
 
 - Intervals shorter than normal execution time (guarantees skipped cadence points).
