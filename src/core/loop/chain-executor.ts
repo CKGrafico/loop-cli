@@ -55,6 +55,7 @@ export function executeChain(options: ChainExecuteOptions): Promise<ChainExecute
   let totalExtraDuration = 0;
   let finalExitCode = exitCode;
   let hadSilentChain = false;
+  let hadNonSilentChain = false;
 
   return (async () => {
     while (currentTargetId) {
@@ -86,6 +87,8 @@ export function executeChain(options: ChainExecuteOptions): Promise<ChainExecute
       if (isSilent) {
         controller.incrementSilentChainCount();
         hadSilentChain = true;
+      } else {
+        hadNonSilentChain = true;
       }
 
       if (logStream && !isSilent) {
@@ -229,7 +232,7 @@ export function executeChain(options: ChainExecuteOptions): Promise<ChainExecute
 
     // If any silent chain task ran, remove all records for this chain group
     // (including the main task record) — the run was uninteresting.
-    if (hadSilentChain) {
+    if (hadSilentChain && !hadNonSilentChain) {
       const filtered = runHistory.filter(r => r.chainGroupId !== chainGroupId);
       runHistory.length = 0;
       runHistory.push(...filtered);
