@@ -50,7 +50,13 @@ Every context-producing Task names its output schema and required keys. Validate
 
 ## Shell operators
 
-`&&` runs commands in order and stops after the first failure. `||` selects a fallback after failure. Neither operator creates parallel work. Use Task steps for supported parallel execution, and keep Git operations sequential.
+In shell commands (`sh -c`): `&&` runs commands in order and stops after the first failure. `||` selects a fallback after failure. Neither operator creates parallel work. Use Task steps for supported parallel execution, and keep Git operations sequential.
+
+In loop-task Task steps: `&&` separates sequential steps (run one after another). `||` separates parallel commands within a step (run simultaneously). These are parsed by the TaskForm, not by the shell.
+
+## JSON parsing
+
+Use `gh --jq` (built-in, no system dependency) instead of piping to system `jq`. System `jq` may not be installed on all machines. For complex JSON parsing, use `python3 -c` as a portable fallback.
 
 ## Secrets and confirmation
 
