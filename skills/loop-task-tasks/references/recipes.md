@@ -21,7 +21,7 @@ Query for eligible work items. Output must be JSON so Loop Task can parse it int
 ### GitHub Issues
 
 ```
-sh -c 'number=$(gh issue list --label "code:pick" --state open --limit 1 --json number --jq ''.[0].number''); test -n "$number" || exit 75; body=$(gh issue view "$number" --json number,title,body --jq ''{number,title,body}''); gh issue edit "$number" --add-label code:doing --remove-label code:pick >/dev/null; printf "%s\n" "$body"'
+sh -c 'number=$(gh issue list --label "code:pick" --state open --limit 1000 --json number --jq ''sort_by(.number) | .[0].number''); test -n "$number" || exit 75; body=$(gh issue view "$number" --json number,title,body --jq ''{number,title,body}''); gh issue edit "$number" --add-label code:doing --remove-label code:pick >/dev/null; printf "%s\n" "$body"'
 ```
 
 - `--state open` excludes closed work.
