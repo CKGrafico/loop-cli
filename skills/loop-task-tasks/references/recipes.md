@@ -247,7 +247,7 @@ A shared terminal Task for the empty-work pattern. Silenced to avoid log noise.
 echo "Nothing to do"
 ```
 
-Set `silentChain: true` on this Task. Every selection Task's `onFailure` can point to the same silent terminator.
+Set `silentChain: true` on this Task. Every selection Task's `onFailure` can point to the same silent terminator. Never use a silent task as `onSuccess` — it hides runs that did real work.
 
 ## Token Efficiency and Chain Composition
 

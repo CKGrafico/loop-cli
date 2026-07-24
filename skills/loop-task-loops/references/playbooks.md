@@ -109,6 +109,6 @@ Loop B selection Task → onFailure → silent terminator
 Loop C selection Task → onFailure → silent terminator
 ```
 
-The silent terminator (`silentChain: true`) outputs nothing and terminates the chain. It prevents log noise from normal "no work found" iterations. Every selection Task that uses the empty-work pattern references the same terminator.
+The silent terminator (`silentChain: true`) hides the entire run from the right panel when no work is found. Always use on `onFailure` only — never on `onSuccess` of real-work tasks. Every selection Task that uses the empty-work pattern references the same terminator.
 
 For the empty-work iteration pattern and condition modelling, load **`loop-task-tasks`**.

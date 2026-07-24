@@ -83,7 +83,7 @@ For interface-specific syntax vocabulary to compose tasks from the questionnaire
 | onSuccess | Next Task on success, or null |
 | onFailure | Next Task on failure, or null |
 | context | Initial key-value pairs seeded before this Task runs |
-| silentChain | Whether chain output is suppressed from logs |
+| silentChain | Hides the run from history when this task executes (use on onFailure only) |
 | steps | Multi-step execution: steps sequential, commands within a step parallel |
 
 For every property, see [references/domain-reference.md](references/domain-reference.md).

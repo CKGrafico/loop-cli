@@ -202,17 +202,17 @@ Steps run sequentially. Commands within a step run in parallel. If any command i
 
 ## 8. Silent Chain Task
 
-**Problem**: A Task that performs bookkeeping or cleanup that should not clutter logs.
+**Problem**: A "no work found" task that should not clutter the run history.
 
 ```
-cleanup:
-  purpose: Release resources or reset state
+nothing-to-do:
+  purpose: Terminate when no work exists
   silentChain: true
   on-success: none
   on-failure: none
 ```
 
-`silentChain: true` redirects output to a null stream. Use for Tasks whose output is not interesting for debugging. The Task still produces a success/failure result and can chain.
+`silentChain: true` hides the entire run from the right panel when this task executes. Only use on `onFailure` paths (e.g. when a selection task finds no issues). Never set a silent task as the `onSuccess` of real-work tasks — it would hide runs that did meaningful work.
 
 ---
 
