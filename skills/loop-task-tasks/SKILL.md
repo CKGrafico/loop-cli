@@ -41,6 +41,14 @@ Before composing concrete Task definitions, use the **question** tool to ask abo
     ]
   },
   {
+    "question": "Which opencode agent should AI Tasks use? (If using opencode run, the agent must exist in .opencode/agents/ or the project's default_agent.)",
+    "header": "Agent",
+    "options": [
+      { "label": "Project default", "description": "Use the default_agent from opencode.json (fullstack-engineer, backend-engineer, etc)." },
+      { "label": "Specific agent", "description": "Specify the agent name (e.g. backend-engineer, frontend-engineer)." }
+    ]
+  },
+  {
     "question": "What operating system, shell, and package manager will run these Tasks?",
     "header": "Runtime",
     "options": [
@@ -71,7 +79,7 @@ Before composing concrete Task definitions, use the **question** tool to ask abo
 ]
 ```
 
-Wait for all requested answers before proceeding. Answers determine executable syntax in Task payloads. A Task's `command` must be a real executable such as `gh`, `az`, `glab`, `opencode`, or `claude`. Slash commands such as `/plan-goal` belong inside an AI prompt passed as an argument to `opencode run` or `claude -p`. Model and agent flags remain runtime concerns.
+Wait for all requested answers before proceeding. Answers determine executable syntax in Task payloads. A Task's `command` must be a real executable such as `gh`, `az`, `glab`, `opencode`, or `claude`. Slash commands such as `/plan-goal` belong inside an AI prompt passed as an argument to `opencode run` or `claude -p`. When using `opencode run`, always pass `--agent <name>` to select a project-defined agent with Abilities; without it, opencode falls back to the built-in `build` agent which has no project skills.
 
 For interface-specific syntax vocabulary to compose tasks from the questionnaire answers, see [references/recipes.md](references/recipes.md).
 
