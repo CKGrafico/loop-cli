@@ -1,4 +1,4 @@
-import type { LoopMeta } from "../../types.js";
+import type { LoopMeta, Project } from "../../types.js";
 
 export type StatusFilter =
   | "all"
@@ -90,8 +90,16 @@ function describeLoop(loop: LoopMeta): string {
   return loop.description?.trim() || [loop.command, ...loop.commandArgs].join(" ").trim();
 }
 
-function compare(left: LoopMeta, right: LoopMeta, sort: SortMode): number {
+function projectSortName(loop: LoopMeta, projects: Project[]): string {
+  if (!loop.projectId) return "\uFFFF";
+  const proj = projects.find((p) => p.id === loop.projectId);
+  return proj?.name ?? "\uFFFF";
+}
+
+function compare(left: LoopMeta, right: LoopMeta, sort: SortMode, projects: Project[]): number {
   if (sort === "description") {
+    const byProject = projectSortName(left, projects).localeCompare(projectSortName(right, projects));
+    if (byProject !== 0) return byProject;
     return describeLoop(left).localeCompare(describeLoop(right));
   }
 
@@ -118,11 +126,12 @@ function compare(left: LoopMeta, right: LoopMeta, sort: SortMode): number {
 export function applyLoopFilters(
   loops: LoopMeta[],
   filters: Filters,
-  sort: SortMode
+  sort: SortMode,
+  projects: Project[] = []
 ): LoopMeta[] {
   return loops
     .filter((loop) => matches(loop, filters))
-    .sort((left, right) => compare(left, right, sort));
+    .sort((left, right) => compare(left, right, sort, projects));
 }
 
 const SORT_CYCLE: Record<SortMode, SortMode> = {

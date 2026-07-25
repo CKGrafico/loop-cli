@@ -152,9 +152,9 @@ export function useAppState(
   const visible = useMemo(
     () => applyLoopFilters(
       currentProjectId === "all" ? loops : loops.filter((l) => (l.projectId ?? "default") === currentProjectId),
-      filters, sort
+      filters, sort, projects
     ),
-    [loops, filters, sort, currentProjectId]
+    [loops, filters, sort, currentProjectId, projects]
   );
   const clampedIndex = Math.min(selectedIndex, Math.max(0, visible.length - 1));
   const selected = visible[clampedIndex] ?? null;
