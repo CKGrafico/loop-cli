@@ -93,14 +93,15 @@ function findOrphanedDaemonPids(excludePid?: number): number[] {
     const platform = process.platform;
     let output: string;
     if (platform === "win32") {
+      // Use Get-CimInstance instead of wmic (removed in Windows 11 24H2).
+      // Output format: one line per process: "CommandLine <tab> ProcessId"
       output = execSync(
-        `wmic process where "name='node.exe'" get ProcessId,CommandLine /format:csv`,
-        { encoding: "utf-8", timeout: 3000 },
+        `powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"Name='node.exe'\\" | Select-Object CommandLine,ProcessId | Format-Table -HideTableHeaders"`,
+        { encoding: "utf-8", timeout: 5000 },
       );
       for (const line of output.split("\n")) {
         if (line.includes("daemon/index.js") || line.includes("daemon/index.ts")) {
-          const parts = line.trim().split(",");
-          const pid = parseInt(parts[parts.length - 1] ?? "", 10);
+          const pid = parseInt(line.trim().split(/\s+/).pop() ?? "", 10);
           if (!Number.isNaN(pid) && pid !== process.pid && pid !== excludePid) {
             pids.push(pid);
           }
