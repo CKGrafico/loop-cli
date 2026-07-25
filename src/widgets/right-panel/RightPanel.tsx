@@ -3,6 +3,7 @@ import { Box, Text, useStdout } from "ink";
 import type { LoopMeta, RunRecord, Project, TaskDefinition } from "../../types.js";
 import { darkTheme as theme, tabAccentColor } from "../../shared/ui/theme.js";
 import type { TabName } from "../../app/types.js";
+import type { Breakpoint } from "../../shared/hooks/useBreakpoint.js";
 import { t } from "../../shared/i18n/index.js";
 import { Inspector } from "./Inspector.js";
 import { RunHistory } from "./RunHistory.js";
@@ -15,6 +16,7 @@ export function RightPanel(props: {
   isFocused: boolean;
   navActive?: boolean;
   activeTab: TabName;
+  breakpoint?: Breakpoint;
   loop: LoopMeta | null;
   selectedRunIndex: number;
   onSelectRun: (index: number) => void;
@@ -31,6 +33,7 @@ export function RightPanel(props: {
     isFocused,
     navActive = true,
     activeTab,
+    breakpoint = "wide",
     loop,
     selectedRunIndex,
     onSelectRun,
@@ -46,11 +49,12 @@ export function RightPanel(props: {
   const borderColor = isFocused ? tabAccentColor(activeTab) : theme.border.default;
   const { stdout } = useStdout();
   const panelHeight = (stdout?.rows ?? 24) - 8;
+  const panelWidth = breakpoint === "wide" ? "40%" : "100%";
 
   return (
     <Box
       flexDirection="column"
-      width="40%"
+      width={panelWidth}
       height={panelHeight}
       borderStyle="single"
       borderColor={borderColor}
@@ -63,10 +67,10 @@ export function RightPanel(props: {
           onDelete={onProjectDelete}
         />
       ) : activeTab === "tasks" ? (
-        <TaskInspector task={selectedTask ?? null} allTasks={allTasks ?? []} />
+        <TaskInspector task={selectedTask ?? null} allTasks={allTasks ?? []} breakpoint={breakpoint} />
       ) : (
         <>
-          <Inspector loop={loop} projects={projects} />
+          <Inspector loop={loop} projects={projects} breakpoint={breakpoint} />
           <RunHistory
             loop={loop}
             selectedRunIndex={selectedRunIndex}
@@ -74,6 +78,7 @@ export function RightPanel(props: {
             onOpenRun={onOpenRun}
             isFocused={isFocused}
             navActive={navActive}
+            breakpoint={breakpoint}
           />
         </>
       )}
@@ -81,14 +86,16 @@ export function RightPanel(props: {
   );
 }
 
-function TaskInspector(props: { task: TaskDefinition | null; allTasks: TaskDefinition[] }): React.ReactNode {
-  const { task, allTasks } = props;
+function TaskInspector(props: { task: TaskDefinition | null; allTasks: TaskDefinition[]; breakpoint?: Breakpoint }): React.ReactNode {
+  const { task, allTasks, breakpoint = "wide" } = props;
+  const divLen = breakpoint === "wide" ? 40 : breakpoint === "compact" ? 30 : 20;
+  const taskDivider = "\u2500".repeat(divLen);
 
   if (!task) {
     return (
       <Box flexDirection="column" flexGrow={1} padding={1}>
         <Text color={theme.accent.task} bold>{t("board.taskInspectorTitle")}</Text>
-        <Text color={theme.text.muted}>{DIVIDER}</Text>
+        <Text color={theme.text.muted}>{taskDivider}</Text>
         <Text color={theme.text.muted}>{t("board.taskInspectorEmpty")}</Text>
       </Box>
     );
@@ -100,7 +107,7 @@ function TaskInspector(props: { task: TaskDefinition | null; allTasks: TaskDefin
         <Text color={theme.accent.task} bold>{t("board.taskInspectorTitle")}</Text>
       </Box>
       <Box paddingLeft={1}>
-        <Text color={theme.text.muted}>{DIVIDER}</Text>
+        <Text color={theme.text.muted}>{taskDivider}</Text>
       </Box>
       <Box flexDirection="column" paddingLeft={1}>
         <Field label={t("board.taskFieldName")}>
@@ -109,16 +116,20 @@ function TaskInspector(props: { task: TaskDefinition | null; allTasks: TaskDefin
         <Field label={t("board.taskFieldId")}>
           <Text color={theme.text.primary}>{task.id}</Text>
         </Field>
-        <Field label={t("board.taskFieldCommand")}>
-          <Text color={theme.text.primary}>
-            {task.commandRaw
-              ? task.commandRaw.split("\n").filter(Boolean).join(" ")
-              : commandLine(task.command, task.commandArgs)}
-          </Text>
-        </Field>
-        <Field label={t("board.taskFieldCreated")}>
-          <Text color={theme.text.primary}>{task.createdAt.slice(0, 10)}</Text>
-        </Field>
+        {breakpoint !== "minimal" ? (
+          <Field label={t("board.taskFieldCommand")}>
+            <Text color={theme.text.primary}>
+              {task.commandRaw
+                ? task.commandRaw.split("\n").filter(Boolean).join(" ")
+                : commandLine(task.command, task.commandArgs)}
+            </Text>
+          </Field>
+        ) : null}
+        {breakpoint === "wide" ? (
+          <Field label={t("board.taskFieldCreated")}>
+            <Text color={theme.text.primary}>{task.createdAt.slice(0, 10)}</Text>
+          </Field>
+        ) : null}
         <Field label={t("board.taskFieldChain")}>
           {task.onSuccessTaskId ? (
             <Text color={theme.semantic.success}>{"\u2713 " + (allTasks.find((t) => t.id === task.onSuccessTaskId)?.name ?? task.onSuccessTaskId)}</Text>
@@ -137,7 +148,7 @@ function TaskInspector(props: { task: TaskDefinition | null; allTasks: TaskDefin
         </Field>
       </Box>
       <Box paddingLeft={1}>
-        <Text color={theme.text.muted}>{DIVIDER}</Text>
+        <Text color={theme.text.muted}>{taskDivider}</Text>
       </Box>
     </Box>
   );

@@ -10,6 +10,8 @@ import { Navigator } from "./Navigator.js";
 import { TaskNavigator } from "./TaskBrowser.js";
 import { FocusableList } from "../../shared/ui/FocusableList.js";
 
+import type { Breakpoint } from "../../shared/hooks/useBreakpoint.js";
+
 function Chip(props: { label: string; value: string; highlighted: boolean }): React.ReactNode {
   const { label, value, highlighted } = props;
   return (
@@ -29,7 +31,7 @@ export function LeftPanel(props: {
   selectedIndex: number;
   filters: Filters;
   sort: SortMode;
-  breakpoint: string;
+  breakpoint: Breakpoint;
   projects: Project[];
   onSelect: (index: number) => void;
   onActivate: (index: number) => void;
@@ -82,10 +84,12 @@ export function LeftPanel(props: {
   const loopCountFor = (projectId: string): number =>
     (projectLoops ?? loops).filter((l) => l.projectId === projectId).length;
 
+  const panelWidth = breakpoint === "wide" ? "60%" : "100%";
+
   return (
     <Box
       flexDirection="column"
-      width="60%"
+      width={panelWidth}
       flexShrink={0}
       borderStyle="single"
       borderColor={borderColor}

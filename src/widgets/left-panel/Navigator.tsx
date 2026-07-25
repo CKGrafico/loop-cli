@@ -7,28 +7,40 @@ import { darkTheme as theme, statusColor } from "../../shared/ui/theme.js";
 import { describeLoop, sinceLabel, statusLabel, timingLabel, truncate } from "../../shared/ui/format.js";
 import { t } from "../../shared/i18n/index.js";
 import { useMouseScroll } from "../../shared/hooks/useMouseScroll.js";
+import type { Breakpoint } from "../../shared/hooks/useBreakpoint.js";
 
-const DESC_WIDTH = 32;
+const DESC_WIDTH_WIDE = 32;
+const DESC_WIDTH_COMPACT = 20;
+const DESC_WIDTH_MINIMAL = 14;
 const SINCE_WIDTH = 13;
 const RUNS_WIDTH = 4;
 const STATUS_WIDTH = 8;
 const COL_GAP = 1;
 const LIMIT = 15;
 
+function descWidth(bp: Breakpoint): number {
+  if (bp === "wide") return DESC_WIDTH_WIDE;
+  if (bp === "compact") return DESC_WIDTH_COMPACT;
+  return DESC_WIDTH_MINIMAL;
+}
+
 export function Navigator(props: {
   visible: LoopMeta[];
   total: number;
   selectedIndex: number;
-  breakpoint?: string;
+  breakpoint?: Breakpoint;
   projects: Project[];
   onSelect: (index: number) => void;
   onActivate: (index: number) => void;
   isFocused: boolean;
   navActive?: boolean;
 }): React.ReactNode {
-  const { visible, total, selectedIndex, projects, onSelect, onActivate, isFocused, navActive = true } = props;
+  const { visible, total, selectedIndex, projects, onSelect, onActivate, isFocused, navActive = true, breakpoint = "wide" } = props;
 
   const n = visible.length;
+  const dw = descWidth(breakpoint);
+  const showSince = breakpoint === "wide";
+  const showTiming = breakpoint !== "minimal";
 
   useInput(
     (input, key) => {
@@ -90,7 +102,8 @@ export function Navigator(props: {
 
   function renderLoop(loop: LoopMeta, isSelected: boolean): React.ReactNode {
     const rawDesc = describeLoop(loop);
-    const desc = truncate(`${projectName(loop)}: ${rawDesc}`, DESC_WIDTH);
+    const prefix = breakpoint === "minimal" ? "" : `${projectName(loop)}: `;
+    const desc = truncate(`${prefix}${rawDesc}`, dw);
     const since = sinceLabel(loop);
     const timing = timingLabel(loop);
     const failed = isFailed(loop);
@@ -108,11 +121,11 @@ export function Navigator(props: {
     return (
       <>
         <Text color={dotColor}>{dotChar}</Text>
-        <Text color={fg}>{desc.padEnd(DESC_WIDTH + COL_GAP)}</Text>
-        <Text color={fg}>{since.padEnd(SINCE_WIDTH + COL_GAP)}</Text>
+        <Text color={fg}>{desc.padEnd(dw + COL_GAP)}</Text>
+        {showSince ? <Text color={fg}>{since.padEnd(SINCE_WIDTH + COL_GAP)}</Text> : null}
         <Text color={fg}>{String(loop.runCount).padStart(RUNS_WIDTH) + " ".repeat(COL_GAP)}</Text>
         <Text color={isSelected ? theme.text.inverse : sColor}>{statusText.padEnd(STATUS_WIDTH + 1 + COL_GAP)}</Text>
-        <Text color={fg}>{timing}</Text>
+        {showTiming ? <Text color={fg}>{timing}</Text> : null}
         {loop.status === "running" ? (
           <Text color={theme.semantic.success}>{" "}<Spinner type="dots" /></Text>
         ) : null}
@@ -134,11 +147,11 @@ export function Navigator(props: {
           <Box paddingLeft={1}>
             <Text color={theme.text.muted}>{"  "}</Text>
             <Text color={theme.text.muted}>{"  "}</Text>
-            <Text color={theme.text.muted}>{t("board.headerDescription").padEnd(DESC_WIDTH + COL_GAP)}</Text>
-            <Text color={theme.text.muted}>{t("board.headerSince").padEnd(SINCE_WIDTH + COL_GAP)}</Text>
+            <Text color={theme.text.muted}>{t("board.headerDescription").padEnd(dw + COL_GAP)}</Text>
+            {showSince ? <Text color={theme.text.muted}>{t("board.headerSince").padEnd(SINCE_WIDTH + COL_GAP)}</Text> : null}
             <Text color={theme.text.muted}>{t("board.headerRuns").padStart(RUNS_WIDTH) + " ".repeat(COL_GAP)}</Text>
             <Text color={theme.text.muted}>{t("board.headerStatus").padEnd(STATUS_WIDTH + COL_GAP)}</Text>
-            <Text color={theme.text.muted}>{t("board.headerTiming")}</Text>
+            {showTiming ? <Text color={theme.text.muted}>{t("board.headerTiming")}</Text> : null}
           </Box>
           <Box paddingLeft={1}>
             <ScrollList selectedIndex={selectedIndex} height={LIMIT}>

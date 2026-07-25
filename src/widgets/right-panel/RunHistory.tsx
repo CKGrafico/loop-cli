@@ -6,6 +6,7 @@ import { darkTheme as theme } from "../../shared/ui/theme.js";
 import { formatRunTime, formatRunDuration, formatFileSize } from "../../shared/ui/format.js";
 import { t } from "../../shared/i18n/index.js";
 import { useMouseScroll } from "../../shared/hooks/useMouseScroll.js";
+import type { Breakpoint } from "../../shared/hooks/useBreakpoint.js";
 
 function runIcon(run: RunRecord): string {
   if (run.status === "running") return "\u21bb";
@@ -17,16 +18,20 @@ function runIconColor(run: RunRecord): string {
   return run.exitCode === 0 ? theme.semantic.success : theme.semantic.danger;
 }
 
-const CHAIN_LABEL_MAX = 28;
+function chainLabelMax(bp: Breakpoint): number {
+  if (bp === "wide") return 28;
+  if (bp === "compact") return 16;
+  return 8;
+}
 
-function truncateChainLabel(label: string): string {
-  if (label.length <= CHAIN_LABEL_MAX) return label;
+function truncateChainLabel(label: string, maxLen: number): string {
+  if (label.length <= maxLen) return label;
   const ellipsis = "...";
-  const keep = CHAIN_LABEL_MAX - ellipsis.length;
+  const keep = maxLen - ellipsis.length;
   return label.slice(0, keep) + ellipsis;
 }
 
-export function groupRunsByCycle(runs: RunRecord[]): RunRecord[] {
+export function groupRunsByCycle(runs: RunRecord[], bp: Breakpoint = "wide"): RunRecord[] {
   const byRun = new Map<number, RunRecord[]>();
   for (const r of runs) {
     const group = byRun.get(r.runNumber);
@@ -48,7 +53,7 @@ export function groupRunsByCycle(runs: RunRecord[]): RunRecord[] {
       .map((r) => r.chainName)
       .filter((n): n is string => Boolean(n));
     const chainLabel = chainNames.length > 0
-      ? truncateChainLabel(`\u2192 ${chainNames.join(" \u2192 ")}`)
+      ? truncateChainLabel(`\u2192 ${chainNames.join(" \u2192 ")}`, chainLabelMax(bp))
       : undefined;
     result.push({
       runNumber: first.runNumber,
@@ -129,15 +134,19 @@ export function RunHistory(props: {
   onOpenRun: (run: RunRecord) => void;
   isFocused: boolean;
   navActive?: boolean;
+  breakpoint?: Breakpoint;
 }): React.ReactNode {
-  const { loop, selectedRunIndex, onSelectRun, onOpenRun, isFocused, navActive = true } = props;
+  const { loop, selectedRunIndex, onSelectRun, onOpenRun, isFocused, navActive = true, breakpoint = "wide" } = props;
   const { stdout } = useStdout();
   const terminalHeight = stdout?.rows ?? 24;
   const LIMIT = Math.max(3, terminalHeight - 22);
 
-  const runs = groupRunsByCycle(loop?.runHistory ?? []);
+  const runs = groupRunsByCycle(loop?.runHistory ?? [], breakpoint);
   const reversed = [...runs].reverse();
   const n = reversed.length;
+  const showSize = breakpoint === "wide";
+  const timePad = breakpoint === "wide" ? 10 : 8;
+  const durPad = breakpoint === "wide" ? 10 : 7;
 
   useInput(
     (input, key) => {
@@ -192,10 +201,10 @@ export function RunHistory(props: {
     const chain = run.chainName ?? "";
     return (
       <>
-        <Text color={fg}>{time.padEnd(10)}</Text>
+        <Text color={fg}>{time.padEnd(timePad)}</Text>
         <Text color={isSelected ? theme.text.inverse : iconColor}>{icon} </Text>
-        <Text color={fg}>{duration.padEnd(10)}</Text>
-        <Text color={fg}>{size.padEnd(8)}</Text>
+        <Text color={fg}>{duration.padEnd(durPad)}</Text>
+        {showSize ? <Text color={fg}>{size.padEnd(8)}</Text> : null}
         <Text color={fg}>{chain}</Text>
       </>
     );
@@ -221,19 +230,28 @@ export function RunHistory(props: {
         <Box flexDirection="column">
           {trends.sparkline ? (
             <Box paddingLeft={1} marginBottom={0}>
-              <Text color={theme.text.muted}>Durations: </Text>
-              <Text color={theme.accent.loop}>{trends.sparkline}</Text>
-              <Text color={theme.text.muted}> avg:{formatRunDuration(trends.avgDuration)} </Text>
-              {trends.successStreak > 0 ? (
-                <Text color={theme.semantic.success}>streak:{trends.successStreak} ok</Text>
-              ) : null}
+              {breakpoint !== "minimal" ? (
+                <>
+                  <Text color={theme.text.muted}>Durations: </Text>
+                  <Text color={theme.accent.loop}>{trends.sparkline}</Text>
+                  <Text color={theme.text.muted}> avg:{formatRunDuration(trends.avgDuration)} </Text>
+                  {trends.successStreak > 0 ? (
+                    <Text color={theme.semantic.success}>streak:{trends.successStreak} ok</Text>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <Text color={theme.accent.loop}>{trends.sparkline}</Text>
+                  <Text color={theme.text.muted}> avg:{formatRunDuration(trends.avgDuration)}</Text>
+                </>
+              )}
             </Box>
           ) : null}
           <Box paddingLeft={1}>
-            <Text color={theme.text.muted}>{t("board.runHistoryTime").padEnd(10)}</Text>
+            <Text color={theme.text.muted}>{t("board.runHistoryTime").padEnd(timePad)}</Text>
             <Text color={theme.text.muted}>{"  "}</Text>
-            <Text color={theme.text.muted}>{t("board.runHistoryDuration").padEnd(10)}</Text>
-            <Text color={theme.text.muted}>{t("board.runHistorySize").padEnd(8)}</Text>
+            <Text color={theme.text.muted}>{t("board.runHistoryDuration").padEnd(durPad)}</Text>
+            {showSize ? <Text color={theme.text.muted}>{t("board.runHistorySize").padEnd(8)}</Text> : null}
             <Text color={theme.text.muted}>{t("board.runHistoryDesc")}</Text>
           </Box>
           <ScrollList selectedIndex={selectedRunIndex} height={LIMIT}>

@@ -127,9 +127,9 @@ export function App(props: { onQuit: () => void }): React.ReactNode {
       <Header daemonStatus={daemonStatus} httpApiEnabled={daemonSettings.reachable ? daemonSettings.httpApiEnabled : undefined} mcpApiEnabled={daemonSettings.reachable ? daemonSettings.mcpApiEnabled : undefined} telemetryEnabled={daemonSettings.reachable ? daemonSettings.telemetryEnabled : undefined} counts={s.counts} activeTab={s.activeTab} onTabChange={s.setActiveTab} tabCounts={s.tabCounts} />
       <Box key={viewKey(view, s.editTarget, s.editTask)} flexGrow={1}>
         {isBoardView(view) ? (
-          <Box flexDirection={breakpoint === "narrow" ? "column" : "row"} flexGrow={1}>
+          <Box flexDirection={breakpoint === "wide" ? "row" : "column"} flexGrow={1}>
             <LeftPanel
-              isFocused={s.focusedPanel === "left" && !anyModalOpen} navActive={inputOwner === "panel"}
+              isFocused={(breakpoint === "minimal" || s.focusedPanel === "left") && !anyModalOpen} navActive={inputOwner === "panel"}
               activeTab={s.activeTab} query={s.leftPanelQuery} loops={s.visible} selectedIndex={s.clampedIndex}
               filters={s.filters} sort={s.sort} breakpoint={breakpoint} projects={s.filteredProjects}
               onSelect={(i) => s.setSelectedIndex(i)} onActivate={(i) => { s.setSelectedIndex(i); }}
@@ -144,15 +144,18 @@ export function App(props: { onQuit: () => void }): React.ReactNode {
               onProjectSelect={(i) => s.setProjectSelectedIndex(i)} onProjectActivate={(i) => { s.setProjectSelectedIndex(i); }}
               projectLoops={loops}
             />
-            <RightPanel
-              isFocused={s.focusedPanel === "right" && !anyModalOpen} navActive={inputOwner === "panel"}
-              activeTab={s.activeTab} loop={s.selected} selectedRunIndex={s.selectedRunIndex}
-              onSelectRun={(i) => s.setSelectedRunIndex(i)} onOpenRun={s.handleOpenRunLog}
-              selectedTask={s.selectedTask} allTasks={s.tasks}
-              selectedProject={s.selectedProjectEntity} projectLoopCount={s.projectLoopCount} projects={s.projects}
-              onProjectEdit={() => { if (s.selectedProjectEntity && !s.selectedProjectEntity.isSystem) handleCommand("edit"); }}
-              onProjectDelete={() => { if (s.selectedProjectEntity && !s.selectedProjectEntity.isSystem) handleCommand("delete"); }}
-            />
+            {breakpoint !== "minimal" ? (
+              <RightPanel
+                breakpoint={breakpoint}
+                isFocused={s.focusedPanel === "right" && !anyModalOpen} navActive={inputOwner === "panel"}
+                activeTab={s.activeTab} loop={s.selected} selectedRunIndex={s.selectedRunIndex}
+                onSelectRun={(i) => s.setSelectedRunIndex(i)} onOpenRun={s.handleOpenRunLog}
+                selectedTask={s.selectedTask} allTasks={s.tasks}
+                selectedProject={s.selectedProjectEntity} projectLoopCount={s.projectLoopCount} projects={s.projects}
+                onProjectEdit={() => { if (s.selectedProjectEntity && !s.selectedProjectEntity.isSystem) handleCommand("edit"); }}
+                onProjectDelete={() => { if (s.selectedProjectEntity && !s.selectedProjectEntity.isSystem) handleCommand("delete"); }}
+              />
+            ) : null}
             {s.debugMode ? <DebugPanel entries={s.debugEntries} /> : null}
           </Box>
         ) : (

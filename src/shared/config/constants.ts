@@ -41,7 +41,14 @@ export const IPC_TIMEOUT_MS = 10000;
 
 export const LOG_TAIL_DEFAULT = 50;
 
-export const BOARD_BREAKPOINT_WIDTH = 80;
+/** Terminal width >= this shows the wide (side-by-side) two-panel layout. */
+export const BOARD_BREAKPOINT_WIDE = 110;
+
+/** Terminal width >= this and < WIDE shows the compact (stacked) single-panel layout. */
+export const BOARD_BREAKPOINT_COMPACT = 70;
+
+/** Legacy alias kept for backward compat with any external consumers. */
+export const BOARD_BREAKPOINT_WIDTH = BOARD_BREAKPOINT_WIDE;
 
 export const HEADER_COMPACT_WIDTH = 60;
 
