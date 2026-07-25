@@ -69,13 +69,14 @@ Invoke an AI runner with interpolated context. The AI performs judgment-heavy wo
 ### opencode run
 
 ```
-opencode run "First, load all skills available for your current agent. Then /plan-goal Implement this issue. Issue title: {{title}} Issue body: {{body}} Issue id: {{number}} Don't ask for confirmation, you are in auto mode. Plan, execute, and generate visual evidence."
+opencode run --agent fullstack-engineer "First, load all skills available for your current agent. Then /plan-goal Implement this issue. Issue title: {{title}} Issue body: {{body}} Issue id: {{number}} Don't ask for confirmation, you are in auto mode. Plan, execute, and generate visual evidence."
 ```
 
+- `--agent fullstack-engineer` ensures the agent with project-specific Abilities is used. Without it, `opencode run` falls back to the built-in `build` agent which has no skill references and will not discover project skills. Adjust the agent name to match the project's custom agent (e.g. `backend-engineer` for backend-only projects).
 - `{{title}}`, `{{body}}`, `{{number}}` are interpolated from context.
 - Keep the prompt focused on the interpolated values, not vague search instructions.
 - `/plan-goal` is prompt text. The executable remains `opencode`, with `run` as its first argument.
-- No `--model` or `--agent` flags - those are runtime concerns, not task definition concerns.
+- No `--model` flag — that is a runtime concern, not a task definition concern.
 
 ### claude -p
 
