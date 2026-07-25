@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useEffect } from "react";
 import { Box, useApp } from "ink";
 import type { LoopMeta, TaskDefinition } from "../types.js";
 import type { View } from "./types.js";
@@ -26,6 +26,7 @@ import { useOverlayStack } from "../features/overlays/useOverlayStack.js";
 import { useGlobalShortcuts } from "../features/commands/useGlobalShortcuts.js";
 import { FormRouter } from "../features/forms/FormRouter.js";
 import { OverlayStack } from "../features/overlays/OverlayStack.js";
+import { MOUSE_TRACKING_ENABLE } from "../shared/config/constants.js";
 
 function viewKey(view: View, editTarget: LoopMeta | null, editTask: TaskDefinition | null): string {
   if (view === "create") return `${view}:${editTarget?.id ?? "new"}`;
@@ -50,6 +51,14 @@ export function App(props: { onQuit: () => void }): React.ReactNode {
   const { view, push, pop } = useRouter("board");
   const { toasts, push: pushToast } = useToasts();
   const breakpoint = useBreakpoint();
+
+  // Re-emit DECSET mouse tracking after layout changes or on first render.
+  // Ink's internal raw-mode toggling during the initial render cycle and
+  // subsequent re-renders (e.g., on resize) can suppress mouse scroll events;
+  // re-emitting ensures the terminal re-enables them.
+  useEffect(() => {
+    process.stdout.write(MOUSE_TRACKING_ENABLE);
+  }, [breakpoint]);
 
   const s = useAppState(loops, pushToast, refresh, loopService, taskService, projectService, logService, view, push, pop);
   useLogStream(s.selectedId, view, (error) => pushToast("error", error.message));

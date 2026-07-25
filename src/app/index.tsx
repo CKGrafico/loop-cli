@@ -31,6 +31,15 @@ export async function launchBoard(): Promise<void> {
     }),
   ));
 
+  // Re-emit DECSET sequences after Ink's first render cycle.
+  // Ink internally toggles raw mode during mount, which can suppress the
+  // mouse tracking and bracketed paste modes we enabled above. Re-emitting
+  // after render() ensures the terminal re-enables them.
+  process.nextTick(() => {
+    process.stdout.write(MOUSE_TRACKING_ENABLE);
+    process.stdout.write(BRACKETED_PASTE_ENABLE);
+  });
+
   process.on("exit", () => {
     disableBracketedPaste();
     disableMouseTracking();
