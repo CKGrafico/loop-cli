@@ -101,22 +101,31 @@ Commit, push, and transition the work item to the next state.
 ### GitHub Issues
 
 ```
-git add .
+git add -A
 ```
 ```
-sh -c 'if git diff --cached --quiet; then echo "No changes to commit"; else git commit -m "Resolve #{{number}}: {{title}}"; fi'
+git commit -m "Resolve #{{number}}: {{title}}" || true
 ```
 ```
 git push -u origin HEAD
 ```
 ```
-gh issue edit {{number}} --remove-label "code:doing" --add-label "code:pr"
+gh pr create --title "Resolve #{{number}}: {{title}}" --body "Closes #{{number}}" --label code:done --base main
 ```
 ```
-gh pr create --title "Resolve #{{number}}: {{title}}" --body "Closes #{{number}}" --base main
+gh pr merge --squash --delete-branch
+```
+```
+gh issue edit {{number}} --add-label code:done --remove-label code:doing --remove-label code:review
+```
+```
+gh issue close {{number}}
+```
+```
+git checkout -- . && git clean -fd && git switch main
 ```
 
-These are sequential **steps** within one finalization Task. Each step runs after the previous completes. The `sh -c` pattern guards against empty commits. The PR creation uses interpolated context from the selection Task.
+These are sequential **steps** within one finalization Task. Each step runs after the previous completes. The PR is created and squash-merged immediately. No approval step is needed for autonomous loops. The issue is closed and the branch returns to main.
 
 ### Azure DevOps
 
