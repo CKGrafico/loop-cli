@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Text, useStdout } from "ink";
+import { Box, Text } from "ink";
 import type { LoopMeta, Project } from "../../types.js";
 import { darkTheme as theme, statusColor } from "../../shared/ui/theme.js";
 import { describeLoop, commandLine, timeAgo, timeUntil, truncate } from "../../shared/ui/format.js";
@@ -10,10 +10,10 @@ function labelWidth(bp: Breakpoint): number {
   return bp === "wide" ? 11 : 8;
 }
 
-function dividerLen(bp: Breakpoint, termWidth: number): number {
+function dividerLen(bp: Breakpoint): number {
   if (bp === "wide") return 40;
-  if (bp === "compact") return Math.min(30, termWidth - 6);
-  return Math.min(20, termWidth - 4);
+  if (bp === "compact") return 28;
+  return 18;
 }
 
 function Field(props: { label: string; lw: number; children: React.ReactNode }): React.ReactNode {
@@ -36,10 +36,8 @@ function MutedField(props: { label: string; lw: number; children: React.ReactNod
 
 export function Inspector(props: { loop: LoopMeta | null; projects?: Project[]; breakpoint?: Breakpoint }): React.ReactNode {
   const { loop, breakpoint = "wide" } = props;
-  const { stdout } = useStdout();
-  const termWidth = stdout?.columns ?? 80;
   const lw = labelWidth(breakpoint);
-  const divLen = dividerLen(breakpoint, termWidth);
+  const divLen = dividerLen(breakpoint);
   const DIVIDER = "\u2500".repeat(divLen);
   const truncLen = breakpoint === "wide" ? 38 : breakpoint === "compact" ? 25 : 15;
 
