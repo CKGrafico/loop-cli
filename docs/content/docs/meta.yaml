@@ -4,7 +4,9 @@ pages:
   - examples
   - "---Guides---"
   - task-chaining
+  - recipe-loops
   - agent-workflows
+  - opentelemetry
   - mcp-server
   - docker
   - "---Reference---"
