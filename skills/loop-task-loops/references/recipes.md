@@ -105,7 +105,7 @@ Three loops forming a production line:
 
 ```
 Improvements Loop (every 6h)
-  │  opencode run "Audit code, create issues with code:pick"
+  │  opencode run "First, load all skills available for your current agent. Then audit code, create issues with code:pick"
   │  (no chain - single AI task)
   │
   ▼  produces issues with code:pick / refine:pick

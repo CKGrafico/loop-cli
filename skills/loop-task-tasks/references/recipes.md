@@ -69,7 +69,7 @@ Invoke an AI runner with interpolated context. The AI performs judgment-heavy wo
 ### opencode run
 
 ```
-opencode run "/plan-goal Implement this issue. Issue title: {{title}} Issue body: {{body}} Issue id: {{number}} Don't ask for confirmation, you are in auto mode. Plan, execute, and generate visual evidence."
+opencode run "First, load all skills available for your current agent. Then /plan-goal Implement this issue. Issue title: {{title}} Issue body: {{body}} Issue id: {{number}} Don't ask for confirmation, you are in auto mode. Plan, execute, and generate visual evidence."
 ```
 
 - `{{title}}`, `{{body}}`, `{{number}}` are interpolated from context.
