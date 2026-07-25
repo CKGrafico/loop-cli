@@ -175,6 +175,86 @@ loop-task project delete abc123
 |----------|-------------|
 | `id\|name` | Project identifier (UUID or current name) |
 
+### `loop-task http-host [address]`
+
+Show or set the network interface the HTTP API and MCP server bind to. By default, both bind to `0.0.0.0` (all interfaces), making the API reachable remotely. Use this command to restrict to localhost or bind to a specific IP.
+
+```bash
+# Show current bind host
+loop-task http-host
+
+# Restrict to localhost only
+loop-task http-host local
+
+# Bind to all interfaces (default)
+loop-task http-host all
+```
+
+| Argument | Description |
+|----------|-------------|
+| `address` | IP to bind — or `local` (127.0.0.1) / `all` (0.0.0.0). Omit to show current value. |
+
+The HTTP API is unauthenticated. When binding to anything other than `127.0.0.1`, secure access at the network layer (SSH, Tailscale, firewall) or restrict to `local`.
+
+### `loop-task telemetry`
+
+Manage OpenTelemetry configuration. When called without a subcommand, shows the current telemetry status. See [OpenTelemetry](/docs/opentelemetry) for the full guide.
+
+```bash
+# Show status (default)
+loop-task telemetry
+loop-task telemetry status
+```
+
+#### `loop-task telemetry on`
+
+Enable OpenTelemetry instrumentation.
+
+```bash
+loop-task telemetry on
+```
+
+#### `loop-task telemetry off`
+
+Disable OpenTelemetry instrumentation.
+
+```bash
+loop-task telemetry off
+```
+
+#### `loop-task telemetry endpoint <url>`
+
+Set the OTLP export endpoint.
+
+```bash
+loop-task telemetry endpoint http://127.0.0.1:4318
+```
+
+| Argument | Description |
+|----------|-------------|
+| `url` | OTLP endpoint URL (e.g. `http://127.0.0.1:4318`) |
+
+#### `loop-task telemetry protocol <protocol>`
+
+Set the OTLP export protocol.
+
+```bash
+loop-task telemetry protocol grpc
+loop-task telemetry protocol http/protobuf
+```
+
+| Argument | Description |
+|----------|-------------|
+| `protocol` | Export protocol: `grpc` or `http/protobuf` |
+
+#### `loop-task telemetry test`
+
+Send a diagnostic span to verify the OTLP endpoint is reachable.
+
+```bash
+loop-task telemetry test
+```
+
 ---
 
 ## Flags
