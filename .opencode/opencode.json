@@ -21,6 +21,9 @@
     "todowrite": "allow"
   },
   "model": "opencode-go/glm-5.1",
+  "skills": {
+    "paths": [".agents/skills"]
+  },
   "plugin": [
     "@slkiser/opencode-quota@latest"
   ],

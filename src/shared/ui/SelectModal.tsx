@@ -49,6 +49,7 @@ export function SelectModal(props: {
   );
 
   useInput((input, key) => {
+    if (input.includes("[<")) return;
     if (key.escape) {
       onClose();
       return;

@@ -20,6 +20,7 @@ export function ProjectsModal(props: {
   });
 
   useInput((input, key) => {
+    if (input.includes("[<")) return;
     if (key.upArrow) {
       setSelectedIndex((i) => i <= 0 ? projects.length - 1 : i - 1);
     } else if (key.downArrow) {

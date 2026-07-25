@@ -23,6 +23,11 @@ export function useGlobalShortcuts(context: ShortcutContext) {
   } = context;
 
   useInput((input, key) => {
+    // Swallow SGR mouse sequences — handled by useMouseScroll in each component
+    if (input.includes("[<")) {
+      return;
+    }
+
     if (key.ctrl && input === "c") {
       if (!logModalRun && !confirmState && !commandsBrowserOpen && !exportModal && !diagramModal) {
         setConfirmState({

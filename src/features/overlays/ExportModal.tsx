@@ -4,6 +4,7 @@ import { darkTheme as theme } from "../../shared/ui/theme.js";
 import { t } from "../../shared/i18n/index.js";
 import { EXPORT_MAX_PREVIEW_LINES } from "../../shared/config/constants.js";
 import { copyToClipboard } from "../../shared/clipboard.js";
+import { useMouseScroll } from "../../shared/hooks/useMouseScroll.js";
 
 interface ExportModalProps {
   json: string;
@@ -30,10 +31,18 @@ export function ExportModal(props: ExportModalProps): React.ReactNode {
     if (input.includes("\x1b[200~")) {
       return;
     }
+    if (input.includes("[<")) {
+      return;
+    }
     if (key.escape) { props.onClose(); return; }
     if (key.downArrow) { setScrollOffset((o) => Math.min(o + 1, maxScroll)); return; }
     if (key.upArrow) { setScrollOffset((o) => Math.max(0, o - 1)); return; }
     if (input === "c" && !key.ctrl) { copyToClipboard(props.json); props.onCopy?.(); return; }
+  });
+
+  useMouseScroll({
+    onScrollUp: () => setScrollOffset((o) => Math.max(0, o - 1)),
+    onScrollDown: () => setScrollOffset((o) => Math.min(o + 1, maxScroll)),
   });
 
   const visible = displayLines.slice(scrollOffset, scrollOffset + VISIBLE_LINES);

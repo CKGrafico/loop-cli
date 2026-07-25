@@ -28,6 +28,7 @@ export function FocusableList<T>(props: {
   useInput(
     (input, key) => {
       if (n === 0) return;
+      if (input.includes("[<")) return;
       if (key.upArrow || input === "k") {
         const next = selectedIndex <= 0 ? n - 1 : selectedIndex - 1;
         onSelect(next);

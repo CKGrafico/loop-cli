@@ -166,6 +166,7 @@ export function WizardForm(props: WizardFormProps): React.ReactNode {
   const visibleSteps = steps.filter((s) => !s.skip || !s.skip(resolvedValues));
 
   useInput((input, key) => {
+    if (input.includes("[<")) return;
     if (key.escape) {
       onCancel();
       return;

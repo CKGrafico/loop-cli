@@ -6,6 +6,7 @@ import { darkTheme as theme } from "../../shared/ui/theme.js";
 import { commandLine } from "../../shared/ui/format.js";
 import { t } from "../../shared/i18n/index.js";
 import { FocusableButton } from "../../shared/ui/FocusableButton.js";
+import { useMouseScroll } from "../../shared/hooks/useMouseScroll.js";
 
 const NAME_WIDTH = 24;
 const COMMAND_WIDTH = 32;
@@ -31,6 +32,10 @@ export function TaskNavigator(props: {
 
   useInput(
     (input, key) => {
+      // Swallow SGR mouse sequences so they don't interfere
+      if (input.includes("[<")) {
+        return;
+      }
       if (key.upArrow || input === "k") {
         onSelect(Math.max(selectedIndex - 1, 0));
       } else if (key.downArrow || input === "j") {
@@ -41,6 +46,18 @@ export function TaskNavigator(props: {
     },
     { isActive: isFocused && navActive },
   );
+
+  useMouseScroll({
+    onScrollUp: () => {
+      if (!(isFocused && navActive)) return;
+      onSelect(Math.max(selectedIndex - 1, 0));
+    },
+    onScrollDown: () => {
+      if (!(isFocused && navActive)) return;
+      onSelect(Math.min(selectedIndex + 1, visible.length - 1));
+    },
+    isActive: isFocused && navActive,
+  });
 
   function resolveName(id: string | null): string | null {
     if (id === null) return null;

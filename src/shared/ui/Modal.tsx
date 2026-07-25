@@ -10,6 +10,7 @@ export function Modal(props: {
   height?: number | string;
 }): React.ReactNode {
   useInput((_input, key) => {
+    if (_input.includes("[<")) return;
     if (key.escape) {
       props.onClose();
     }

@@ -4,6 +4,7 @@ import { darkTheme as theme } from "../../shared/ui/theme.js";
 import { t } from "../../shared/i18n/index.js";
 import { buildTabCommands } from "../../features/commands/commands.js";
 import type { Command, CommandCategory, CommandContext } from "../../app/types.js";
+import { useMouseScroll } from "../../shared/hooks/useMouseScroll.js";
 
 const CATEGORY_ORDER: CommandCategory[] = ["global", "filters", "loop", "task", "project"];
 
@@ -57,6 +58,7 @@ export function CommandsBrowserModal(props: {
   const currentFlatIdx = selectableIndices[cursor] ?? 0;
 
   useInput((input, key) => {
+    if (input.includes("[<")) { return; }
     if (key.escape) { props.onClose(); return; }
 
     if (key.upArrow) {
@@ -77,6 +79,11 @@ export function CommandsBrowserModal(props: {
       }
       return;
     }
+  });
+
+  useMouseScroll({
+    onScrollUp: () => setCursor((prev) => prev <= 0 ? Math.max(0, selectableIndices.length - 1) : prev - 1),
+    onScrollDown: () => setCursor((prev) => prev >= selectableIndices.length - 1 ? 0 : prev + 1),
   });
 
   const windowStart = Math.max(0, currentFlatIdx - Math.floor(MAX_VISIBLE / 2));

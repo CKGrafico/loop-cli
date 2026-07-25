@@ -10,6 +10,7 @@ import { formatDate } from "../../shared/ui/format.js";
 import { copyToClipboard } from "../../shared/clipboard.js";
 import { LOG_MODAL_LINES_MAX } from "../../shared/config/constants.js";
 import { appendClamped, clampLines } from "../../shared/utils/log-lines.js";
+import { useMouseScroll } from "../../shared/hooks/useMouseScroll.js";
 
 function colorForLine(line: string, run: RunRecord): string {
   if (line.includes("[Run #")) return theme.accent.loop;
@@ -119,6 +120,11 @@ export function LogModal(props: {
       return;
     }
 
+    // Swallow SGR mouse sequences so they don't trigger key.escape
+    if (input.includes("[<")) {
+      return;
+    }
+
     if (searchMode) {
       if (key.escape || key.return) {
         setSearchMode(false);
@@ -171,6 +177,21 @@ export function LogModal(props: {
       setScrollOffset(Math.max(0, base - 1));
       return;
     }
+  });
+
+  useMouseScroll({
+    onScrollUp: () => {
+      if (searchMode) return;
+      const base = follow ? Math.max(0, totalLines - MAX_VISIBLE_LINES) : scrollOffset;
+      setFollow(false);
+      setScrollOffset(Math.max(0, base - 1));
+    },
+    onScrollDown: () => {
+      if (searchMode) return;
+      const base = follow ? Math.max(0, totalLines - MAX_VISIBLE_LINES) : scrollOffset;
+      setFollow(false);
+      setScrollOffset(Math.min(base + 1, Math.max(0, totalLines - MAX_VISIBLE_LINES)));
+    },
   });
 
   const isLoading = props.loading || streaming;

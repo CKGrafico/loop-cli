@@ -5,6 +5,7 @@ import type { LoopMeta, RunRecord } from "../../types.js";
 import { darkTheme as theme } from "../../shared/ui/theme.js";
 import { formatRunTime, formatRunDuration, formatFileSize } from "../../shared/ui/format.js";
 import { t } from "../../shared/i18n/index.js";
+import { useMouseScroll } from "../../shared/hooks/useMouseScroll.js";
 
 function runIcon(run: RunRecord): string {
   if (run.status === "running") return "\u21bb";
@@ -141,6 +142,10 @@ export function RunHistory(props: {
   useInput(
     (input, key) => {
       if (n === 0) return;
+      // Swallow SGR mouse sequences so they don't interfere
+      if (input.includes("[<")) {
+        return;
+      }
       if (key.upArrow || input === "k") {
         const next = selectedRunIndex <= 0 ? n - 1 : selectedRunIndex - 1;
         onSelectRun(next);
@@ -159,6 +164,20 @@ export function RunHistory(props: {
     },
     { isActive: isFocused && navActive },
   );
+
+  useMouseScroll({
+    onScrollUp: () => {
+      if (n === 0 || !(isFocused && navActive)) return;
+      const next = selectedRunIndex <= 0 ? n - 1 : selectedRunIndex - 1;
+      onSelectRun(next);
+    },
+    onScrollDown: () => {
+      if (n === 0 || !(isFocused && navActive)) return;
+      const next = selectedRunIndex >= n - 1 ? 0 : selectedRunIndex + 1;
+      onSelectRun(next);
+    },
+    isActive: isFocused && navActive,
+  });
 
   const title = isFocused ? t("board.runHistoryTitleHint") : t("board.runHistoryTitle");
   const trends = computeTrends(runs);

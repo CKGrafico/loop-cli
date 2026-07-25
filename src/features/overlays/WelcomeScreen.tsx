@@ -24,6 +24,7 @@ export function WelcomeScreen(props: {
   const items = [...EXAMPLES.map((e) => e.label), "Create empty loop"];
 
   useInput((_input, key) => {
+    if (_input.includes("[<")) return;
     if (creating) return;
     if (key.upArrow) {
       setSelectedIndex((i) => i <= 0 ? items.length - 1 : i - 1);

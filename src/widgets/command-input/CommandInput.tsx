@@ -107,6 +107,11 @@ function CommandMode({
         return;
       }
 
+      // Swallow SGR mouse sequences — handled by useMouseScroll
+      if (input.includes("[<")) {
+        return;
+      }
+
       if ((key.ctrl && input === "u") || input === "\x15") { clearInput(); return; }
 
       if (key.ctrl) return;

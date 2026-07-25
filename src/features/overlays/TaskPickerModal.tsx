@@ -35,6 +35,7 @@ export function TaskPickerModal(props: {
   );
 
   useInput((input, key) => {
+    if (input.includes("[<")) return;
     if (key.escape) {
       props.onClose();
       return;

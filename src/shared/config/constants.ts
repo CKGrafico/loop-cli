@@ -54,6 +54,12 @@ export const BRACKETED_PASTE_ENABLE = "\x1b[?2004h";
 export const BRACKETED_PASTE_DISABLE = "\x1b[?2004l";
 export const PASTE_MAX_CHARS = 4096;
 
+// DECSET 1000: enable mouse button event tracking (scroll wheel + clicks).
+// DECSET 1006: enable SGR extended mouse mode (structured escape sequences
+// that are unambiguous and easy to parse, e.g. [<64;col;rowM for scroll up).
+export const MOUSE_TRACKING_ENABLE = "\x1b[?1000h\x1b[?1006h";
+export const MOUSE_TRACKING_DISABLE = "\x1b[?1006l\x1b[?1000l";
+
 export const HOVER_BG = "#1e3a5f";
 
 export const PROJECT_COLORS: Record<string, string> = {

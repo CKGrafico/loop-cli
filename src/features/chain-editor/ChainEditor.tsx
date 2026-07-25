@@ -94,6 +94,7 @@ export function ChainEditor(props: {
   }, [trees]);
 
   useInput((_input, key) => {
+    if (_input.includes("[<")) return;
     if (key.escape) {
       props.onClose();
       return;

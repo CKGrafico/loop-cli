@@ -50,6 +50,8 @@ export function useEditorKeyboard(params: UseEditorKeyboardParams): void {
         return;
       }
 
+      // Swallow SGR mouse sequences
+      if (input.includes("[<")) return;
       if (key.escape) {
         onCancel();
         return;

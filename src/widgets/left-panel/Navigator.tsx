@@ -6,6 +6,7 @@ import type { LoopMeta, Project } from "../../types.js";
 import { darkTheme as theme, statusColor } from "../../shared/ui/theme.js";
 import { describeLoop, sinceLabel, statusLabel, timingLabel, truncate } from "../../shared/ui/format.js";
 import { t } from "../../shared/i18n/index.js";
+import { useMouseScroll } from "../../shared/hooks/useMouseScroll.js";
 
 const DESC_WIDTH = 32;
 const SINCE_WIDTH = 13;
@@ -32,6 +33,10 @@ export function Navigator(props: {
   useInput(
     (input, key) => {
       if (n === 0) return;
+      // Swallow SGR mouse sequences so they don't interfere
+      if (input.includes("[<")) {
+        return;
+      }
       if (key.upArrow || input === "k") {
         const next = selectedIndex <= 0 ? n - 1 : selectedIndex - 1;
         onSelect(next);
@@ -49,6 +54,20 @@ export function Navigator(props: {
     },
     { isActive: isFocused && navActive },
   );
+
+  useMouseScroll({
+    onScrollUp: () => {
+      if (n === 0 || !(isFocused && navActive)) return;
+      const next = selectedIndex <= 0 ? n - 1 : selectedIndex - 1;
+      onSelect(next);
+    },
+    onScrollDown: () => {
+      if (n === 0 || !(isFocused && navActive)) return;
+      const next = selectedIndex >= n - 1 ? 0 : selectedIndex + 1;
+      onSelect(next);
+    },
+    isActive: isFocused && navActive,
+  });
 
   const title = t("board.navigatorCount", {
     visible: String(visible.length),

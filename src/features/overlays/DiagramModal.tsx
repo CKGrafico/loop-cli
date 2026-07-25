@@ -3,6 +3,7 @@ import { Box, Text, useInput } from "ink";
 import { darkTheme as theme } from "../../shared/ui/theme.js";
 import { t } from "../../shared/i18n/index.js";
 import { copyToClipboard } from "../../shared/clipboard.js";
+import { useMouseScroll } from "../../shared/hooks/useMouseScroll.js";
 
 interface DiagramModalProps {
   diagramText: string;
@@ -22,10 +23,18 @@ export function DiagramModal(props: DiagramModalProps): React.ReactNode {
     if (input.includes("\x1b[200~")) {
       return;
     }
+    if (input.includes("[<")) {
+      return;
+    }
     if (key.escape) { props.onClose(); return; }
     if (key.downArrow) { setScrollOffset((o) => Math.min(o + 1, maxScroll)); return; }
     if (key.upArrow) { setScrollOffset((o) => Math.max(0, o - 1)); return; }
     if (input === "c" && !key.ctrl) { copyToClipboard(props.diagramText); props.onCopy?.(); return; }
+  });
+
+  useMouseScroll({
+    onScrollUp: () => setScrollOffset((o) => Math.max(0, o - 1)),
+    onScrollDown: () => setScrollOffset((o) => Math.min(o + 1, maxScroll)),
   });
 
   const visible = lines.slice(scrollOffset, scrollOffset + VISIBLE_LINES);

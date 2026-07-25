@@ -8,6 +8,7 @@ export function HelpGuideModal(props: {
   onClose: () => void;
 }): React.ReactNode {
   useInput((_input, key) => {
+    if (_input.includes("[<")) return;
     if (key.escape || _input === "q") {
       props.onClose();
     }

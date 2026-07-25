@@ -20,6 +20,7 @@ export function ConfirmMode({
 
   useInput(
     (input, key) => {
+      if (input.includes("[<")) return;
       if (key.ctrl) return;
       if (input.length > 1 && (input.includes("\r") || input.includes("\n"))) return;
       if (key.escape) { setValue(""); onConfirmCancel(); return; }
@@ -75,6 +76,7 @@ export function SearchMode({
 }): React.ReactNode {
   useInput(
     (input, key) => {
+      if (input.includes("[<")) return;
       if (key.ctrl) return;
       if (input.length > 1 && (input.includes("\r") || input.includes("\n"))) return;
       if (key.escape) { onSearchCancel(); return; }

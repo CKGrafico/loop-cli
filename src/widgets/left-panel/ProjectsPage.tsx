@@ -38,6 +38,7 @@ export function ProjectsPage(props: ProjectsPageProps): React.ReactNode {
 
   useInput((input, key) => {
     if (subModal !== "none") return;
+    if (input.includes("[<")) return;
 
     if (key.escape) {
       props.onClose();

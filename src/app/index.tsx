@@ -1,7 +1,7 @@
 import { render } from "ink";
 import React from "react";
 import { App } from "./App.js";
-import { BRACKETED_PASTE_ENABLE, BRACKETED_PASTE_DISABLE, USER_TIMING_SWEEP_MS } from "../shared/config/constants.js";
+import { BRACKETED_PASTE_ENABLE, BRACKETED_PASTE_DISABLE, MOUSE_TRACKING_ENABLE, MOUSE_TRACKING_DISABLE, USER_TIMING_SWEEP_MS } from "../shared/config/constants.js";
 import { InversifyProvider } from "../shared/providers/InversifyProvider.js";
 
 function startUserTimingSweep(): void {
@@ -15,7 +15,9 @@ function startUserTimingSweep(): void {
 export async function launchBoard(): Promise<void> {
   startUserTimingSweep();
   process.stdout.write(BRACKETED_PASTE_ENABLE);
+  process.stdout.write(MOUSE_TRACKING_ENABLE);
   const disableBracketedPaste = () => process.stdout.write(BRACKETED_PASTE_DISABLE);
+  const disableMouseTracking = () => process.stdout.write(MOUSE_TRACKING_DISABLE);
 
   const instance = render(React.createElement(
     InversifyProvider,
@@ -23,16 +25,21 @@ export async function launchBoard(): Promise<void> {
     React.createElement(App, {
       onQuit: () => {
         disableBracketedPaste();
+        disableMouseTracking();
         instance.unmount();
       }
     }),
   ));
 
-  process.on("exit", disableBracketedPaste);
+  process.on("exit", () => {
+    disableBracketedPaste();
+    disableMouseTracking();
+  });
 
   process.on("uncaughtException", (error) => {
     console.error("Uncaught exception:", error);
     disableBracketedPaste();
+    disableMouseTracking();
     instance.unmount();
     process.exit(1);
   });

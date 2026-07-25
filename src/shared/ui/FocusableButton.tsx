@@ -13,6 +13,7 @@ export function FocusableButton(props: {
 
   useInput(
     (_input, key) => {
+      if (_input.includes("[<")) return;
       if (key.return) {
         onPress?.();
       }

@@ -36,6 +36,9 @@ export function FocusableInput(props: FocusableInputProps): React.ReactNode {
         return;
       }
 
+      // Swallow SGR mouse sequences
+      if (input.includes("[<")) return;
+
       if (key.ctrl || key.escape) return;
 
       // Multi-char containing CR/LF with no bracketed markers  ignore
