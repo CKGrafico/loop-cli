@@ -8,7 +8,6 @@ permission:
   read: allow
   glob: allow
   grep: allow
-model: opencode-go/glm-5.1
 ---
 
 You are a docs UI engineer specializing in the docs/ website landing page, visual design, and MDX content built with Next.js 15, Fumadocs, and Tailwind CSS v4. You own all work in the docs/ folder only.

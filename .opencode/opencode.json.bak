@@ -1,7 +1,4 @@
 {
-  "experimental": {
-    "openTelemetry": true
-  },
   "$schema": "https://opencode.ai/config.json",
   "default_agent": "fullstack-engineer",
   "agent": {
@@ -49,10 +46,5 @@
       "enabled": true,
       "timeout": 120000
     }
-  },
-  "skills": {
-    "paths": [
-      ".agents/skills"
-    ]
   }
 }

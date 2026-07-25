@@ -50,10 +50,12 @@ A project harness writes `evidence/` and `evidence.json` itself; consume its man
   DEST="$(ls -d "$REPO_ROOT/openspec/changes/archive/"*"{change-id}" 2>/dev/null | head -1)"
   [ -z "$DEST" ] && DEST="$REPO_ROOT/openspec/changes/{change-id}"
   mkdir -p "$DEST/evidence"
-  # save the screenshot to "$DEST/evidence/01-final.png"
-  ```
+   # save the screenshot to "$DEST/evidence/01-final.png"
+   ```
 
-**Step 4: Always write `evidence.json`.** Even non-UI/skipped/blocked changes get a manifest so the outcome is auditable. Build `prMarkdown` from the assets (or a text summary: tasks N/N, verification result, commit list).
+- Send command output and any intermediate capture files to `$REPO_ROOT/.opencode/.tmp/evidence-{change-id}/`, then copy final assets directly into `$DEST/evidence/`. Do not use an operating-system temporary directory.
+
+**Step 4: Always write `evidence.json`.** Even non-UI/skipped/blocked changes get a manifest so the outcome is auditable. Write it and every final asset under `$DEST/evidence/`, with manifest paths matching that archived location. Build `prMarkdown` from the assets (or a text summary: tasks N/N, verification result, commit list).
 
 Capture never commits, stages, or pushes. The caller owns git.
 
@@ -63,6 +65,7 @@ Preconditions:
 - An issue/work-item ref (and/or PR number) was provided. Else skip publishing.
 - Image URLs resolve only if the branch was pushed. In `pr`/`push` modes embed images; in `default` mode post text evidence only (never a dead image link).
 - Backlog platform from `.opencode/opencode-onboard.json` -> `platform.backlog`; `none`/`browser` means skip publishing.
+- Publish one idempotent status comment for every manifest result. A `blocked` or `failed` result must state its status and reason; it must never be presented as passed.
 
 The platform-specific publish procedure is injected by the CLI during onboarding:
 
@@ -70,9 +73,9 @@ The platform-specific publish procedure is injected by the CLI during onboarding
 **ALL GitHub data MUST come from `gh` CLI. NEVER use webfetch, HTTP requests, or browser MCP tools for GitHub. If `gh` is unavailable, skip publishing (report it) — do not fail the pipeline over it unless the caller declared publishing a ship gate.**
 Always pass `--repo {owner}/{repo}` (or `repos/{owner}/{repo}` for `gh api`) explicitly.
 
-Publish only a `passed` (or text-only) manifest. A `blocked`/`failed` manifest is surfaced, not published as success.
+Publish one status comment for every manifest. A `blocked` or `failed` manifest must include its status and reason, never a success claim.
 
-### Step 1 — Verify each asset exists on the remote (only for embedded images)
+### Step 1 — Build commit-pinned repository links
 
 An embedded image must be a raw URL pinned to the commit that actually contains it, and that commit must be pushed. For each asset in `evidence.json`:
 
@@ -82,7 +85,7 @@ SHA="$(git log -n 1 --format=%H -- '{asset-path}')"          # the commit that a
 gh api "repos/{owner}/{repo}/contents/{asset-path}?ref=$SHA" --silent   # 404 → not pushed yet → skip embedding
 ```
 
-Raw URL: `https://raw.githubusercontent.com/{owner}/{repo}/{SHA}/{asset-path}` (private repos: visible only to users with repo access). If verification fails, fall back to a text-only comment; never post a dead image link.
+Build a blob link for every committed manifest and asset: `https://github.com/{owner}/{repo}/blob/{SHA}/{asset-path}`. Use the raw URL only for a verified embeddable image: `https://raw.githubusercontent.com/{owner}/{repo}/{SHA}/{asset-path}`. If verification fails, include the asset path and SHA as text; never post a dead link.
 
 ### Step 2 — Build the comment body with a stable marker (idempotent)
 
@@ -90,6 +93,14 @@ Prefix the body with a hidden marker so re-runs update the same comment instead 
 
 ```
 <!-- ob-visual-evidence:{change-id} -->
+
+Status: `{status}`
+
+{reason?}
+
+Manifest: {commit-pinned evidence.json link}
+
+Assets: {commit-pinned asset links}
 
 {prMarkdown}
 ```

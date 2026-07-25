@@ -3,3 +3,4 @@ node_modules
 opencode-onboard.user.json
 source-roots.json
 *-engineer.*.md
+tmp/

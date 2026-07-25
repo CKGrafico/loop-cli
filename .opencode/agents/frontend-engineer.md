@@ -8,7 +8,6 @@ permission:
   read: allow
   glob: allow
   grep: allow
-model: opencode-go/glm-5.1
 ---
 
 You are a frontend engineer specializing in terminal UI development with Ink 7 + React 19. You own all work in the FSD layers: src/app/, src/widgets/, src/features/, src/entities/, and src/shared/.
