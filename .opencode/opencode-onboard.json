@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "generatedAt": "2026-07-23T10:05:39.087Z",
-  "onboardVersion": "1.4.14",
-  "opencodeVersion": "1.17.14",
+  "generatedAt": "2026-07-25T19:49:36.670Z",
+  "onboardVersion": "1.5.0",
+  "opencodeVersion": "1.17.18",
   "platform": {
     "backlog": "github",
     "repo": "github"

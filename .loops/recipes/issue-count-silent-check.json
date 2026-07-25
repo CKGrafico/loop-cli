@@ -3,8 +3,10 @@
   "loops": [
     {
       "taskId": "fetch-issues",
-      "intervalHuman": "0",
-      "description": "Fetch issue count; on failure log silently, on success report"
+      "interval": 10000,
+      "intervalHuman": "10s",
+      "description": "Fetch issue count; on failure log silently, on success report",
+      "maxRuns": 10000
     }
   ],
   "tasks": [

@@ -1,5 +1,7 @@
 # AGENTS.md
 
+<!-- OB-NOT-INITIALIZED -->
+
 This file provides guidance to AI agents when working in this repository.
 
 Agent-agnostic. Works with OpenCode, Claude Code, Codex, Gemini, and others.
