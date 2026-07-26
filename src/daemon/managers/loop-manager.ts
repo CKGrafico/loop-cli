@@ -385,12 +385,10 @@ export class LoopManager {
     }
   }
 
-  addRecipeLoop(id: string, entry: StoredLoop, recipeFile: string): void {
+  addRecipeLoop(id: string, entry: StoredLoop, recipeFile: string, persist: () => void): void {
     this.recipes.set(id, entry);
     this.recipeMeta.set(id, { isRecipe: true, recipeFile });
-    wireEvents(id, entry.controller, entry.options, entry.intervalHuman, () => {
-      // Recipe loop state changes are not persisted to loops.json
-    });
+    wireEvents(id, entry.controller, entry.options, entry.intervalHuman, persist);
   }
 
   removeRecipeLoop(id: string): void {

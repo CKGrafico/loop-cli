@@ -12,6 +12,7 @@ import { RecipeTaskStore } from "./task-store.js";
 import { getLogPath } from "../state/index.js";
 import { daemonLog } from "../daemon-log.js";
 import { parseDuration } from "../../duration.js";
+import { loadRecipeRuntimeState, saveRecipeRuntimeState } from "./runtime-state.js";
 
 export interface RecipeEntry {
   id: string;
@@ -22,6 +23,10 @@ export interface RecipeEntry {
 }
 
 const RECIPE_DIR = ".loops/recipes";
+
+export function recipeLoopId(projectId: string, filePath: string): string {
+  return `recipe-${crypto.createHash("sha1").update(`${projectId}:${path.resolve(filePath)}`).digest("hex").slice(0, 16)}`;
+}
 
 export class RecipeScanner {
   private recipeTaskStore: RecipeTaskStore;
@@ -100,7 +105,7 @@ export class RecipeScanner {
     const recipe = validation.data!;
     const { loop: recipeLoop, tasks } = remapRecipeIds(recipe);
 
-    const id = crypto.randomBytes(4).toString("hex");
+    const id = recipeLoopId(projectId, filePath);
     const taskIds = tasks.map((t) => t.id);
 
     this.recipeTaskStore.setMany(tasks);
@@ -128,10 +133,19 @@ export class RecipeScanner {
       this.recipeTaskStore.get(taskId) ?? null;
 
     const logPath = getLogPath(id);
-    const controller = new LoopController(id, options, logPath, taskResolver, undefined, projectDir);
+    const controller = new LoopController(
+      id,
+      options,
+      logPath,
+      taskResolver,
+      loadRecipeRuntimeState(id),
+      projectDir,
+    );
 
     const entry: StoredLoop = { controller, options, intervalHuman };
-    this.loopManager.addRecipeLoop(id, entry, fileName);
+    this.loopManager.addRecipeLoop(id, entry, fileName, () => {
+      saveRecipeRuntimeState(id, controller.getMeta());
+    });
 
     this.recipes.set(id, {
       id,

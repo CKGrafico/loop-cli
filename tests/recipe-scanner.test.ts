@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { RecipeScanner } from "../src/daemon/recipe/scanner.js";
 import { RecipeTaskStore } from "../src/daemon/recipe/task-store.js";
+import { saveRecipeRuntimeState } from "../src/daemon/recipe/runtime-state.js";
 import type { RecipeFile } from "../src/daemon/recipe/validator.js";
 import { LoopManager } from "../src/daemon/managers/loop-manager.js";
 import { TaskManager } from "../src/daemon/managers/task-manager.js";
@@ -46,15 +47,19 @@ describe("RecipeScanner", () => {
   let tmpDir: string;
   let store: RecipeTaskStore;
   let scanner: RecipeScanner;
+  let loopManager: LoopManager;
+  let projectId: string;
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "recipe-test-"));
     store = new RecipeTaskStore();
     scanner = new RecipeScanner(store);
 
-    const { loopManager, taskManager, projectManager } = createTestManagers(tmpDir);
+    const managers = createTestManagers(tmpDir);
+    loopManager = managers.loopManager;
+    const { taskManager, projectManager } = managers;
     taskManager.setRecipeTaskStore(store);
-    const _testProject = projectManager.create("TestProject", "#ffffff", tmpDir);
+    projectId = projectManager.create("TestProject", "#ffffff", tmpDir).id;
     scanner.setManagers(loopManager, projectManager);
     loopManager.setRecipeScanner(scanner);
   });
@@ -85,7 +90,7 @@ describe("RecipeScanner", () => {
   });
 
   it("scanDirectory skips when .loops/recipes does not exist", () => {
-    scanner.scanDirectory("test-project", tmpDir);
+    scanner.scanDirectory(projectId, tmpDir);
     expect(scanner.listRecipes()).toHaveLength(0);
   });
 
@@ -141,6 +146,39 @@ describe("RecipeScanner", () => {
     // Task IDs should be regenerated (different from before)
     const newRecipe = recipes[0]!;
     expect(newRecipe.taskIds[0]).not.toBe(oldTaskId);
+  });
+
+  it("preserves identity and run history across a daemon restart", () => {
+    const recipesDir = path.join(tmpDir, ".loops/recipes");
+    const recipePath = path.join(recipesDir, "history.json");
+    fs.mkdirSync(recipesDir, { recursive: true });
+    fs.writeFileSync(recipePath, JSON.stringify(validRecipe, null, 2));
+
+    scanner.scanDirectory(projectId, tmpDir);
+    const original = scanner.listRecipes()[0]!;
+    saveRecipeRuntimeState(original.id, {
+      status: "idle",
+      runCount: 2,
+      totalRunCount: 2,
+      lastRunAt: "2026-07-26T10:00:00.000Z",
+      lastExitCode: 0,
+      lastDuration: 42,
+      runHistory: [{ startedAt: "2026-07-26T10:00:00.000Z", endedAt: "2026-07-26T10:00:00.042Z", duration: 42, exitCode: 0, status: "completed", logOffset: 0 }],
+    });
+
+    const restartedStore = new RecipeTaskStore();
+    const restartedScanner = new RecipeScanner(restartedStore);
+    const restartedManagers = createTestManagers(tmpDir);
+    restartedManagers.taskManager.setRecipeTaskStore(restartedStore);
+    restartedScanner.setManagers(restartedManagers.loopManager, restartedManagers.projectManager);
+    restartedManagers.loopManager.setRecipeScanner(restartedScanner);
+    restartedScanner.scanDirectory(projectId, tmpDir);
+
+    const reloaded = restartedScanner.listRecipes()[0]!;
+    const loop = restartedManagers.loopManager.list().find((item) => item.id === reloaded.id)!;
+    expect(reloaded.id).toBe(original.id);
+    expect(loop.runCount).toBe(2);
+    expect(loop.runHistory).toHaveLength(1);
   });
 
   it("skips malformed recipe files", () => {
