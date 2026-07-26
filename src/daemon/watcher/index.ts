@@ -222,7 +222,7 @@ export class FileWatcher {
 
     try {
       fs.watch(recipesDir, (eventType, filename) => {
-        if (!filename || !filename.endsWith(".json")) return;
+        if (!filename || (!filename.endsWith(".yaml") && !filename.endsWith(".yml"))) return;
         this.handleRecipeFileEvent(projectId, recipesDir, filename);
       });
     } catch {
