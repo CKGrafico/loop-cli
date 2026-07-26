@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import yaml from "js-yaml";
 import { LoopController } from "../../core/loop/loop-controller.js";
 import type { LoopOptions } from "../../types.js";
 import type { StoredLoop } from "../managers/loop-options.js";
@@ -13,6 +14,8 @@ import { getLogPath } from "../state/index.js";
 import { daemonLog } from "../daemon-log.js";
 import { parseDuration } from "../../duration.js";
 import { loadRecipeRuntimeState, saveRecipeRuntimeState } from "./runtime-state.js";
+
+const RECIPE_EXTENSIONS = [".yaml", ".yml"];
 
 export interface RecipeEntry {
   id: string;
@@ -70,7 +73,7 @@ export class RecipeScanner {
     if (!fs.existsSync(recipesDir)) return;
 
     try {
-      const files = fs.readdirSync(recipesDir).filter((f) => f.endsWith(".json"));
+      const files = fs.readdirSync(recipesDir).filter((f) => RECIPE_EXTENSIONS.some((ext) => f.endsWith(ext)));
       for (const file of files) {
         const filePath = path.join(recipesDir, file);
         this.loadRecipe(projectId, filePath, file);
@@ -90,7 +93,7 @@ export class RecipeScanner {
 
     let raw: unknown;
     try {
-      raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      raw = yaml.load(fs.readFileSync(filePath, "utf-8"));
     } catch (err) {
       daemonLog(`error reading recipe file ${filePath}: ${String(err)}`);
       return null;
