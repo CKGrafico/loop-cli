@@ -40,7 +40,7 @@ export interface RecipeValidationResult {
 
 export function validateRecipeFile(raw: unknown): RecipeValidationResult {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    return { valid: false, error: "Recipe file must be a JSON object" };
+    return { valid: false, error: "Recipe file must be a mapping (root object)" };
   }
 
   const data = raw as Record<string, unknown>;
