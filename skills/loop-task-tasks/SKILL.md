@@ -216,6 +216,7 @@ Read [references/reliability.md](references/reliability.md) for environment, saf
 
 - For cadence, iteration scheduling, and multi-loop pipelines, load **`loop-task-loops`**.
 - For Project organisation, load **`loop-task-projects`**.
+- For generating the ASCII art `diagram:` field in recipe files, load **`loop-task-diagram`** after writing the recipe.
 - For advanced chaining models, see [references/chaining.md](references/chaining.md).
 - For the complete context lifecycle, see [references/context.md](references/context.md).
 - For condition patterns, see [references/conditions.md](references/conditions.md).

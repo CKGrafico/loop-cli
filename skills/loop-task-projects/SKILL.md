@@ -77,3 +77,4 @@ For concrete examples of each pattern, see [references/examples.md](references/e
 
 - For Loop cadence and iteration scheduling, load **`loop-task-loops`**.
 - For Task execution, chaining, and context, load **`loop-task-tasks`**.
+- For generating the ASCII art `diagram:` field in recipe files, load **`loop-task-diagram`** after writing the recipe.

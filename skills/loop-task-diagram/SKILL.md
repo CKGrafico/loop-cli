@@ -1,21 +1,16 @@
 ---
-name: recipe-diagram
-description: |
-  Generate ASCII art diagrams of loop-task recipe YAML files in .loops/recipes/.
-  Use when an agent creates or edits a .loops/recipes/*.yaml file, when a user
-  asks to visualize a recipe task chain, or when the diagram: field needs
+name: loop-task-diagram
+version: 1.0.0
+description: >
+  Generate ASCII art diagrams of Loop Task recipe YAML files in .loops/recipes/.
+  Load when creating, reviewing, or modifying a recipe .yaml file, when a user
+  asks to visualize a recipe's task chain, or when the diagram: field needs
   regeneration. Maps the recipe schema (loops, tasks, onSuccessTaskId,
   onFailureTaskId, silentChain) to a text-based flowchart showing the full
   chain with success and failure edges, cycle routing, and terminator nodes.
-license: MIT
-allowed-tools: Read,Write,Edit
-metadata:
-  internal: true
-  version: "1.0"
-  author: loop-task
 ---
 
-# recipe-diagram: visualize recipe chains as ASCII art
+# Loop Task Diagram
 
 A recipe's task graph is its **chain**. Each task in `tasks[]` is a node; each `onSuccessTaskId` and `onFailureTaskId` is an edge. The `loops[].taskId` points at the **entry** node. A task with both edges null is a **terminator**. This skill reads a `.loops/recipes/*.yaml` file, maps its chain to ASCII glyphs, chooses a layout, renders the diagram, and writes it back into the `diagram:` field of the same YAML file using AST-preserving round-trips so the rest of the file stays untouched.
 
@@ -295,3 +290,9 @@ Do not use this skill for:
 - Editing recipes. This skill is read-only for every field except `diagram:`. It never touches `loops[]`, `tasks[]`, or any data field.
 - Tasks outside `.loops/recipes/`. Normal loops (created via `loop-task new`) do not have recipe files and are not diagrammed here.
 - Photo editing, UI mockups, or interactive diagrams. This is text art in a YAML file.
+
+## Cross-Skill References
+
+- For Loop cadence, iteration scheduling, and recipe file schema, load **`loop-task-loops`**. It tells you how to compose a Loop and write it as a `.loops/recipes/*.yaml` file.
+- For Task execution, chaining, context, and success/failure edges, load **`loop-task-tasks`**. It defines the `onSuccessTaskId` and `onFailureTaskId` fields this skill diagrams.
+- For Project organisation, load **`loop-task-projects`**.

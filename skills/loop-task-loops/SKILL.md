@@ -165,6 +165,73 @@ API_KEY=xyz
 
 Lines starting with `#` are ignored. Values may be quoted. The file is optional - if absent, child tasks use the daemon's environment as-is.
 
+## Writing a Recipe File
+
+After composing a Loop and its Tasks, write them to disk as a recipe file so the daemon auto-discovers and schedules them. A recipe is a single `.yaml` file in `.loops/recipes/` relative to the project root.
+
+### Recipe schema
+
+```yaml
+version: 2
+
+loops:
+  - taskId: <entry-task-id>
+    intervalHuman: "10s"
+    description: <human description>
+    maxRuns: <number or null>
+    immediate: <true or false>
+
+tasks:
+  - id: <unique-task-id>
+    name: <display name>
+    command: <executable>
+    commandArgs: [<arg>, <arg>]
+    onSuccessTaskId: <next-task-id or null>
+    onFailureTaskId: <next-task-id or null>
+    silentChain: <true or false>
+
+diagram: |
+  <ASCII art produced by loop-task-diagram skill>
+```
+
+### How to write a recipe
+
+1. Compose the Loop cadence and Task chain using `loop-task-loops` and `loop-task-tasks`.
+2. Write the `.yaml` file to `.loops/recipes/<name>.yaml` with `version`, `loops[]`, `tasks[]`. Leave `diagram:` empty or omit it for now.
+3. Load **`loop-task-diagram`** to generate the ASCII art diagram and write it into the `diagram:` field. The diagram skill uses AST-preserving YAML writes so the data fields survive untouched.
+4. Verify the daemon picks up the file: `loop-task status` should show the new recipe loop.
+
+A recipe file with a `diagram` field looks like:
+
+```yaml
+version: 2
+
+loops:
+  - taskId: fetch-issues
+    intervalHuman: 10s
+    description: Fetch issue count on a cadence
+
+tasks:
+  - id: fetch-issues
+    name: Fetch issues
+    command: gh
+    commandArgs: ["issue", "list", "--json", "number"]
+    onSuccessTaskId: report
+    onFailureTaskId: null
+
+  - id: report
+    name: Report count
+    command: echo
+    commandArgs: ["total issues: {{total}}"]
+    onSuccessTaskId: null
+    onFailureTaskId: null
+
+diagram: |
+  +------------+     +--------+
+  | fetch-issues |---yes-->| report |--> ((end))
+  +------------+     +--------+
+```
+
 ## Antipatterns
 
 - Intervals shorter than normal execution time (guarantees skipped cadence points).
@@ -180,4 +247,5 @@ Lines starting with `#` are ignored. Values may be quoted. The file is optional 
 
 - For Task execution, chaining, context, conditions, and AI agent patterns, load **`loop-task-tasks`**.
 - For Project organisation, load **`loop-task-projects`**.
+- For generating the ASCII art `diagram:` field in recipe files, load **`loop-task-diagram`** after writing the recipe.
 - For cadence design examples, see [references/patterns.md](references/patterns.md) and [references/examples.md](references/examples.md).
