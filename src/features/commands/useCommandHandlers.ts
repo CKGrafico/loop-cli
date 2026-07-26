@@ -7,6 +7,8 @@ import { container } from "../../shared/container/index.js";
 import { TYPES } from "../../shared/services/types.js";
 import type { SettingsService } from "../../shared/services/types.js";
 import { renderChainDiagram } from "../chain-editor/renderChainDiagram.js";
+import { readRecipeDiagram } from "../../daemon/recipe/diagram-reader.js";
+import { renderMermaidAsAscii, renderTaskChainAscii } from "../chain-editor/mermaidToAscii.js";
 
 export function useCommandHandlers(context: CommandHandlerContext) {
   const {
@@ -37,6 +39,10 @@ export function useCommandHandlers(context: CommandHandlerContext) {
         }
         push("create");
       } else if (activeTab === "tasks" && selectedTask) {
+        if (selectedTask.isRecipeTask) {
+          pushToast("error", t("task.recipeImmutable"));
+          return;
+        }
         setEditTask(selectedTask);
         push("task-edit");
       } else if (activeTab === "projects" && selectedProjectEntity && !selectedProjectEntity.isSystem) {
@@ -58,6 +64,10 @@ export function useCommandHandlers(context: CommandHandlerContext) {
           onConfirm: () => { void loopService.delete(selected.id).then(() => { void refresh(); }); },
         });
       } else if (activeTab === "tasks" && selectedTask) {
+        if (selectedTask.isRecipeTask) {
+          pushToast("error", t("task.recipeImmutable"));
+          return;
+        }
         setConfirmState({
           prompt: t("confirm.deleteTask", { id: selectedTask.id }),
           onConfirm: () => { void taskService.delete(selectedTask.id).then(() => { void refreshTasks(); }); },
@@ -233,8 +243,22 @@ export function useCommandHandlers(context: CommandHandlerContext) {
     },
     diagram: () => {
       if (activeTab === "loops" && selected?.taskId) {
-        const diagram = renderChainDiagram(selected.taskId, tasks);
-        setDiagramModal(diagram);
+        if (selected.isRecipe && selected.recipeFilePath) {
+          try {
+            const diagram = readRecipeDiagram(selected.recipeFilePath);
+            if (diagram) {
+              // Render Mermaid as ASCII for the TUI modal
+              const ascii = renderMermaidAsAscii(diagram);
+              setDiagramModal(ascii);
+            } else {
+              pushToast("error", t("diagram.noDiagramInRecipe"));
+            }
+          } catch (e) {
+            pushToast("error", t("diagram.readError", { message: (e as Error).message }));
+          }
+        } else {
+          pushToast("error", t("diagram.notARecipe"));
+        }
       }
     },
     export: () => {

@@ -106,7 +106,7 @@ export class RecipeScanner {
     }
 
     const recipe = validation.data!;
-    const { loop: recipeLoop, tasks } = remapRecipeIds(recipe);
+    const { loop: recipeLoop, tasks } = remapRecipeIds(recipe, projectId);
 
     const id = recipeLoopId(projectId, filePath);
     const taskIds = tasks.map((t) => t.id);
@@ -146,7 +146,7 @@ export class RecipeScanner {
     );
 
     const entry: StoredLoop = { controller, options, intervalHuman };
-    this.loopManager.addRecipeLoop(id, entry, fileName, () => {
+    this.loopManager.addRecipeLoop(id, entry, fileName, filePath, () => {
       saveRecipeRuntimeState(id, controller.getMeta());
     });
 

@@ -150,6 +150,7 @@ export function LeftPanel(props: {
           isFocused={isFocused}
           navActive={navActive}
           allTasks={tasks}
+          projects={projects}
         />
       ) : (
         <ProjectNavigator

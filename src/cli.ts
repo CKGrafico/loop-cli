@@ -366,7 +366,7 @@ program
 
 program
   .command("diagram")
-  .description("Show ASCII chain diagram for a loop's task")
+  .description("View the loop diagram from the recipe YAML file")
   .argument("<id>", "Loop ID")
   .action(async (id: string) => {
     try {
@@ -385,11 +385,22 @@ program
         console.log(`Loop ${id} has no task chain`);
         process.exit(0);
       }
-      const tasksRes = await sendRequest({ type: "task-list" });
-      const tasks = tasksRes.type === "ok" ? (tasksRes.data as import("./types.js").TaskDefinition[]) : [];
-      const { renderChainDiagram } = await import("./features/chain-editor/renderChainDiagram.js");
-      const diagram = renderChainDiagram(loop.taskId, tasks);
-      console.log(diagram);
+
+      // Recipe loops: read diagram from YAML
+      if (loop.isRecipe && loop.recipeFilePath) {
+        const { readRecipeDiagram } = await import("./daemon/recipe/diagram-reader.js");
+        const { renderMermaidAsAscii } = await import("./features/chain-editor/mermaidToAscii.js");
+        const diagram = readRecipeDiagram(loop.recipeFilePath);
+        if (diagram) {
+          console.log(renderMermaidAsAscii(diagram));
+        } else {
+          console.error(t("diagram.noDiagramInRecipe"));
+          process.exit(1);
+        }
+      } else {
+        console.error(t("diagram.notARecipe"));
+        process.exit(1);
+      }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(t("cli.error", { message }));

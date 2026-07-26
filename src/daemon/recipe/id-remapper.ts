@@ -8,7 +8,7 @@ export interface RemappedRecipe {
   remapTable: Map<string, string>;
 }
 
-export function remapRecipeIds(recipe: RecipeFile): RemappedRecipe {
+export function remapRecipeIds(recipe: RecipeFile, projectId?: string): RemappedRecipe {
   const remapTable = new Map<string, string>();
 
   for (const task of recipe.tasks) {
@@ -26,6 +26,8 @@ export function remapRecipeIds(recipe: RecipeFile): RemappedRecipe {
       onFailureTaskId: task.onFailureTaskId ? remapTable.get(task.onFailureTaskId) ?? null : null,
       maxRuns: DEFAULT_TASK_MAX_RUNS,
       createdAt: new Date().toISOString(),
+      isRecipeTask: true,
+      projectId,
     };
 
     if (task.silentChain !== undefined) {

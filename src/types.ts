@@ -35,6 +35,8 @@ export interface TaskDefinition {
   context?: Record<string, unknown>;
   createdAt: string;
   telemetry?: TaskTelemetryConfig;
+  isRecipeTask?: boolean;
+  projectId?: string;
 }
 
 export interface TaskTelemetryConfig {
@@ -121,6 +123,7 @@ export interface LoopMeta {
   totalRunCount?: number;
   isRecipe?: boolean;
   recipeFile?: string;
+  recipeFilePath?: string;
 }
 
 export interface TelemetrySettings {

@@ -109,7 +109,7 @@ export function buildCommands(context: CommandContext): Command[] {
         { label: t('cmd.logs'), value: 'logs', hint: '', tier: COMMAND_TIER_ACTION, category: COMMAND_CATEGORY_LOOP, shortcut: 'ctrl+a+o' },
       );
 
-      if (loop.taskId) {
+      if (loop.taskId && loop.isRecipe) {
         commands.push({
           label: t('cmd.diagram'), value: 'diagram', hint: '',
           tier: COMMAND_TIER_ACTION, category: COMMAND_CATEGORY_LOOP,
@@ -131,6 +131,11 @@ export function buildCommands(context: CommandContext): Command[] {
         { label: t('cmd.editTask'), value: 'edit', hint: '', tier: COMMAND_TIER_ACTION, category: COMMAND_CATEGORY_TASK, shortcut: 'ctrl+a+e' },
         { label: t('cmd.deleteTask'), value: 'delete', hint: t('confirm.deleteTask', { id: task.id }), tier: COMMAND_TIER_CONFIRM, category: COMMAND_CATEGORY_TASK, shortcut: 'ctrl+a+d' },
       );
+      if (task.isRecipeTask) {
+        // Remove edit and delete for recipe tasks — they are immutable
+        commands.pop();
+        commands.pop();
+      }
     }
   }
 
@@ -172,7 +177,7 @@ export function buildTabCommands(context: CommandContext): Command[] {
       { label: t('cmd.logs'), value: 'logs', hint: '', tier: COMMAND_TIER_ACTION, category: COMMAND_CATEGORY_LOOP, shortcut: 'ctrl+a+o' },
     );
 
-    if (context.selectedLoop?.taskId) {
+    if (context.selectedLoop?.taskId && context.selectedLoop?.isRecipe) {
       commands.push({
         label: t('cmd.diagram'), value: 'diagram', hint: '',
         tier: COMMAND_TIER_ACTION, category: COMMAND_CATEGORY_LOOP,

@@ -32,6 +32,7 @@ tasks:
     onFailureTaskId: null
 
 diagram: |
-  ┌─────────────┐       ┌─────────────┐
-  │ list-issues │──✓──▶│ print-oldest │──▶ end
-  └─────────────┘       └─────────────┘
+  flowchart TD
+      listIssues["List all issues<br/>Fetch open+closed via gh"] -->|✓| printOldest
+      printOldest["Print oldest issue<br/>Echo #number + title + date"] -->|✓| finalNode(("End"))
+      style listIssues fill:#e1f5fe

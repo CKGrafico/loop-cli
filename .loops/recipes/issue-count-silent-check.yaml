@@ -43,10 +43,11 @@ tasks:
     onFailureTaskId: null
 
 diagram: |
-  ┌─────────────┐       ┌─────────┐
-  │ fetch-issues │──✓──▶│ report  │──▶ end
-  └─────────────┘       └─────────┘
-        │
-        └──✗──▶ ┌──────────────────┐ (silent)
-                │ log-silent-error │──▶ end
-                └──────────────────┘
+  flowchart TD
+      fetchIssues["Fetch issues<br/>gh issue list + count (maxRuns=10000)"] -->|✓| report
+      fetchIssues -.->|✗| logSilentError
+      report["Report count<br/>Echo total issue count"] -->|✓| finalNode(("End"))
+      logSilentError["Log error<br/>Silent chain fallback"] -->|✓| finalNode(("End"))
+      style fetchIssues fill:#e1f5fe
+      class logSilentError silent
+      classDef silent strokeDasharray:5 5,fill:#fef9e7

@@ -21,7 +21,7 @@ import type { TelemetryManager } from "../telemetry/telemetry-manager.js";
 export class LoopManager {
   private loops = new Map<string, StoredLoop>();
   private recipes = new Map<string, StoredLoop>();
-  private recipeMeta = new Map<string, { isRecipe: true; recipeFile: string }>();
+  private recipeMeta = new Map<string, { isRecipe: true; recipeFile: string; recipeFilePath: string }>();
   private lastSerialized = new Map<string, string>();
   private taskManager: TaskManager;
   private projectManager: ProjectManager;
@@ -188,7 +188,7 @@ export class LoopManager {
     }
     for (const [id, entry] of this.recipes) {
       const meta = this.recipeMeta.get(id);
-      result.push(buildRecipeMeta(id, entry, this.taskManager, meta?.recipeFile));
+      result.push(buildRecipeMeta(id, entry, this.taskManager, meta?.recipeFile, meta?.recipeFilePath));
     }
     return result;
   }
@@ -227,7 +227,7 @@ export class LoopManager {
     const recipeEntry = this.recipes.get(id);
     if (recipeEntry) {
       const meta = this.recipeMeta.get(id);
-      return buildRecipeMeta(id, recipeEntry, this.taskManager, meta?.recipeFile);
+      return buildRecipeMeta(id, recipeEntry, this.taskManager, meta?.recipeFile, meta?.recipeFilePath);
     }
 
     return null;
@@ -385,9 +385,9 @@ export class LoopManager {
     }
   }
 
-  addRecipeLoop(id: string, entry: StoredLoop, recipeFile: string, persist: () => void): void {
+  addRecipeLoop(id: string, entry: StoredLoop, recipeFile: string, recipeFilePath: string, persist: () => void): void {
     this.recipes.set(id, entry);
-    this.recipeMeta.set(id, { isRecipe: true, recipeFile });
+    this.recipeMeta.set(id, { isRecipe: true, recipeFile, recipeFilePath });
     wireEvents(id, entry.controller, entry.options, entry.intervalHuman, persist);
   }
 

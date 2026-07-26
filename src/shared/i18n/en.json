@@ -695,10 +695,15 @@
   "board.recipeBadge": "R",
   "board.recipeFile": "Recipe",
   "board.recipeTooltip": "Recipe loops are managed by .loops/recipes/*.json",
-  "cmd.diagram": "Diagram task chain",
-  "diagram.modalTitle": "Chain Diagram",
+  "cmd.diagram": "View loop diagram",
+  "diagram.modalTitle": "Loop Diagram",
   "diagram.hint": "up/down:scroll  c:copy  esc:close",
   "diagram.noTaskChain": "This loop has no task chain.",
   "diagram.loopNotFound": "Loop not found: {id}",
-  "diagram.noTaskLinked": "Loop {id} has no task chain"
+  "diagram.noTaskLinked": "Loop {id} has no task chain",
+  "diagram.noDiagramInRecipe": "This recipe has no diagram field. Add a diagram: section to the YAML file.",
+  "diagram.notARecipe": "Only recipe loops have diagrams. This loop was created manually.",
+  "diagram.readError": "Failed to read recipe diagram: {message}",
+  "task.recipeImmutable": "Recipe tasks are immutable. Edit the .loops/recipes/*.yaml file instead.",
+  "task.recipeImmutableShort": "Recipe task — edit the .yaml file"
 }

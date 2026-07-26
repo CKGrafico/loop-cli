@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Text, useInput } from "ink";
 import { ScrollList } from "ink-scroll-list";
-import type { TaskDefinition } from "../../types.js";
+import type { TaskDefinition, Project } from "../../types.js";
 import { darkTheme as theme } from "../../shared/ui/theme.js";
 import { commandLine } from "../../shared/ui/format.js";
 import { t } from "../../shared/i18n/index.js";
@@ -9,7 +9,8 @@ import { FocusableButton } from "../../shared/ui/FocusableButton.js";
 import { useMouseScroll } from "../../shared/hooks/useMouseScroll.js";
 
 const NAME_WIDTH = 24;
-const COMMAND_WIDTH = 32;
+const COMMAND_WIDTH = 28;
+const PROJECT_WIDTH = 10;
 const LIMIT = 15;
 
 export function TaskNavigator(props: {
@@ -20,10 +21,11 @@ export function TaskNavigator(props: {
   isFocused: boolean;
   navActive?: boolean;
   allTasks: TaskDefinition[];
+  projects: Project[];
   onSelect: (index: number) => void;
   onActivate: (index: number) => void;
 }): React.ReactNode {
-  const { visible, total, selectedIndex, isFocused, navActive = true, allTasks, onSelect, onActivate } = props;
+  const { visible, total, selectedIndex, isFocused, navActive = true, allTasks, projects, onSelect, onActivate } = props;
 
   const title = t("board.taskBrowserTitle", {
     visible: String(visible.length),
@@ -76,6 +78,11 @@ export function TaskNavigator(props: {
     });
   }
 
+  function resolveProjectName(task: TaskDefinition): string {
+    const proj = projects.find((p) => p.id === task.projectId);
+    return proj?.name ?? "";
+  }
+
   function renderTask(task: TaskDefinition, index: number): React.ReactNode {
     const isSelected = index === selectedIndex;
     const name = task.name.length > NAME_WIDTH
@@ -87,10 +94,17 @@ export function TaskNavigator(props: {
       : cmd.padEnd(COMMAND_WIDTH);
     const chains = chainsLabel(task);
     const silent = task.silentChain ? " [s]" : "";
+    const recipeBadge = task.isRecipeTask ? "R " : "";
+    const projectTag = task.isRecipeTask && task.projectId ? `${resolveProjectName(task)}: ` : "";
+    const projectDisplay = projectTag.length > PROJECT_WIDTH
+      ? projectTag.slice(0, PROJECT_WIDTH - 3) + "..."
+      : projectTag.padEnd(PROJECT_WIDTH);
     const fg = isSelected ? theme.text.inverse : theme.text.primary;
+    const recipeFg = isSelected ? theme.text.inverse : theme.accent.brand;
     return (
       <Box backgroundColor={isSelected ? (isFocused && navActive ? theme.bg.activeTask : isFocused ? theme.bg.hover : undefined) : undefined}>
-        <Text color={fg}>{name}</Text>
+        <Text color={recipeFg}>{recipeBadge}</Text>
+        <Text color={fg}>{projectDisplay}{name}</Text>
         <Text color={fg}>{cmdDisplay}</Text>
         <Text color={fg}>{chains}{silent}</Text>
       </Box>
@@ -205,17 +219,20 @@ export function TaskActionButtons(props: {
   onAction: (action: string) => void;
 }): React.ReactNode {
   const { task, selectable, onAction } = props;
+  const isRecipe = task?.isRecipeTask === true;
 
-  const actions = selectable
-    ? [
-        { key: "select", label: t("board.taskActionSelect") },
-        { key: "edit", label: t("board.taskActionEdit") },
-        { key: "delete", label: t("board.taskActionDelete") },
-      ]
-    : [
-        { key: "edit", label: t("board.taskActionEdit") },
-        { key: "delete", label: t("board.taskActionDelete") },
-      ];
+  const actions = isRecipe
+    ? []  // Recipe tasks are immutable — no actions allowed
+    : selectable
+      ? [
+          { key: "select", label: t("board.taskActionSelect") },
+          { key: "edit", label: t("board.taskActionEdit") },
+          { key: "delete", label: t("board.taskActionDelete") },
+        ]
+      : [
+          { key: "edit", label: t("board.taskActionEdit") },
+          { key: "delete", label: t("board.taskActionDelete") },
+        ];
 
   if (!task) {
     return (
@@ -227,6 +244,20 @@ export function TaskActionButtons(props: {
         backgroundColor={theme.bg.surface}
       >
         <Text color={theme.text.muted}>{t("board.noActions")}</Text>
+      </Box>
+    );
+  }
+
+  if (isRecipe) {
+    return (
+      <Box
+        borderStyle="single"
+        borderColor={theme.border.default}
+        flexDirection="row"
+        height={3}
+        backgroundColor={theme.bg.surface}
+      >
+        <Text color={theme.text.muted}>{t("task.recipeImmutableShort")}</Text>
       </Box>
     );
   }
