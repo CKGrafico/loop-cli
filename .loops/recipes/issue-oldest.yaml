@@ -33,6 +33,17 @@ tasks:
 
 diagram: |
   flowchart TD
-      listIssues["List all issues<br/>Fetch open+closed via gh"] -->|✓| printOldest
-      printOldest["Print oldest issue<br/>Echo #number + title + date"] -->|✓| finalNode(("End"))
-      style listIssues fill:#e1f5fe
+      listStart("Start<br/>List all repo issues") --> listIssues
+      listIssues["List issues<br/>Fetch open+closed via gh"] -->|✓| printOldest
+      listIssues -.->|✗| listFail
+      printOldest("Print oldest<br/>Echo #number + title + date")
+      listFail(("Fail<br/>gh not authenticated or error"))
+      classDef start fill:#ffffff,stroke:#172033,stroke-width:2px,color:#172033
+      classDef action fill:#eef0ff,stroke:#554cff,stroke-width:2px,color:#172033
+      classDef decision fill:#fff8e8,stroke:#c75b00,stroke-width:2px,color:#172033
+      classDef failure fill:#fff0f0,stroke:#ef2929,stroke-width:2px,color:#8b1a1a
+      classDef success fill:#e8f8ec,stroke:#18883c,stroke-width:2px,color:#145a32
+      class listStart start
+      class printOldest action
+      class listIssues decision
+      class listFail failure
