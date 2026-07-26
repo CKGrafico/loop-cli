@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import * as yaml from "js-yaml";
 import { RecipeScanner } from "../src/daemon/recipe/scanner.js";
 import { RecipeTaskStore } from "../src/daemon/recipe/task-store.js";
 import { saveRecipeRuntimeState } from "../src/daemon/recipe/runtime-state.js";
@@ -77,15 +78,15 @@ describe("RecipeScanner", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory("test-project", tmpDir);
 
     const recipes = scanner.listRecipes();
     expect(recipes.length).toBe(1);
-    expect(recipes[0]!.recipeFile).toBe("test.json");
+    expect(recipes[0]!.recipeFile).toBe("test.yaml");
     expect(recipes[0]!.projectId).toBe("test-project");
   });
 
@@ -98,14 +99,14 @@ describe("RecipeScanner", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "first.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "first.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory("test-project", tmpDir);
     fs.writeFileSync(
-      path.join(recipesDir, "second.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "second.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory("test-project", tmpDir);
@@ -117,8 +118,8 @@ describe("RecipeScanner", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory("test-project", tmpDir);
@@ -132,8 +133,8 @@ describe("RecipeScanner", () => {
   it("reloadRecipe replaces recipe in memory", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
-    const filePath = path.join(recipesDir, "test.json");
-    fs.writeFileSync(filePath, JSON.stringify(validRecipe, null, 2));
+    const filePath = path.join(recipesDir, "test.yaml");
+    fs.writeFileSync(filePath, yaml.dump(validRecipe));
 
     scanner.scanDirectory("test-project", tmpDir);
     const oldRecipe = scanner.listRecipes()[0]!;
@@ -150,9 +151,9 @@ describe("RecipeScanner", () => {
 
   it("preserves identity and run history across a daemon restart", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
-    const recipePath = path.join(recipesDir, "history.json");
+    const recipePath = path.join(recipesDir, "history.yaml");
     fs.mkdirSync(recipesDir, { recursive: true });
-    fs.writeFileSync(recipePath, JSON.stringify(validRecipe, null, 2));
+    fs.writeFileSync(recipePath, yaml.dump(validRecipe));
 
     scanner.scanDirectory(projectId, tmpDir);
     const original = scanner.listRecipes()[0]!;
@@ -184,29 +185,29 @@ describe("RecipeScanner", () => {
   it("skips malformed recipe files", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
-    fs.writeFileSync(path.join(recipesDir, "bad.json"), "not valid json{{{");
+    fs.writeFileSync(path.join(recipesDir, "bad.yaml"), "not: valid: yaml: [[{");
     fs.writeFileSync(
-      path.join(recipesDir, "good.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "good.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory("test-project", tmpDir);
 
     const recipes = scanner.listRecipes();
     expect(recipes).toHaveLength(1);
-    expect(recipes[0]!.recipeFile).toBe("good.json");
+    expect(recipes[0]!.recipeFile).toBe("good.yaml");
   });
 
   it("unloadRecipesForProject removes all recipes for a project", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "a.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "a.yaml"),
+      yaml.dump(validRecipe),
     );
     fs.writeFileSync(
-      path.join(recipesDir, "b.json"),
-      JSON.stringify({ ...validRecipe, loops: [{ ...validRecipe.loops[0], taskId: "echo" }], tasks: [{ ...validRecipe.tasks[0], id: "echo" }] }, null, 2),
+      path.join(recipesDir, "b.yaml"),
+      yaml.dump({ ...validRecipe, loops: [{ ...validRecipe.loops[0], taskId: "echo" }], tasks: [{ ...validRecipe.tasks[0], id: "echo" }] }),
     );
 
     scanner.scanDirectory("test-project", tmpDir);

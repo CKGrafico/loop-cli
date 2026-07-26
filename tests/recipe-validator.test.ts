@@ -57,7 +57,7 @@ describe("validateRecipeFile", () => {
   it("rejects non-object input", () => {
     const result = validateRecipeFile("not an object");
     expect(result.valid).toBe(false);
-    expect(result.error).toContain("JSON object");
+    expect(result.error).toContain("mapping");
   });
 
   it("rejects missing version", () => {

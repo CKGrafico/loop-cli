@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import * as yaml from "js-yaml";
 import { RecipeScanner } from "../src/daemon/recipe/scanner.js";
 import { RecipeTaskStore } from "../src/daemon/recipe/task-store.js";
 import { LoopManager } from "../src/daemon/managers/loop-manager.js";
@@ -75,8 +76,8 @@ describe("LoopManager with recipe loops", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory(projectId, tmpDir);
@@ -84,15 +85,15 @@ describe("LoopManager with recipe loops", () => {
     const loops = loopManager.list();
     const recipeLoop = loops.find((l) => l.isRecipe === true);
     expect(recipeLoop).toBeDefined();
-    expect(recipeLoop!.recipeFile).toBe("test.json");
+    expect(recipeLoop!.recipeFile).toBe("test.yaml");
   });
 
   it("update on recipe loop allows only overridable fields", async () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory(projectId, tmpDir);
@@ -115,8 +116,8 @@ describe("LoopManager with recipe loops", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory(projectId, tmpDir);
@@ -132,8 +133,8 @@ describe("LoopManager with recipe loops", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory(projectId, tmpDir);
@@ -149,13 +150,13 @@ describe("LoopManager with recipe loops", () => {
     const newDir = path.join(tmpDir, "new");
     fs.mkdirSync(path.join(oldDir, ".loops/recipes"), { recursive: true });
     fs.writeFileSync(
-      path.join(oldDir, ".loops/recipes", "old.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(oldDir, ".loops/recipes", "old.yaml"),
+      yaml.dump(validRecipe),
     );
     fs.mkdirSync(path.join(newDir, ".loops/recipes"), { recursive: true });
     fs.writeFileSync(
-      path.join(newDir, ".loops/recipes", "new.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(newDir, ".loops/recipes", "new.yaml"),
+      yaml.dump(validRecipe),
     );
 
     const proj = projectManager.create("DirProj", "#ff0000", oldDir);
@@ -163,7 +164,7 @@ describe("LoopManager with recipe loops", () => {
 
     let loops = loopManager.list().filter((l) => l.isRecipe);
     expect(loops).toHaveLength(1);
-    expect(loops[0]!.recipeFile).toBe("old.json");
+    expect(loops[0]!.recipeFile).toBe("old.yaml");
 
     projectManager.setOnDirectoryChange((pId, _old, nDir) => {
       scanner.unloadRecipesForProject(pId);
@@ -175,6 +176,6 @@ describe("LoopManager with recipe loops", () => {
 
     loops = loopManager.list().filter((l) => l.isRecipe);
     expect(loops).toHaveLength(1);
-    expect(loops[0]!.recipeFile).toBe("new.json");
+    expect(loops[0]!.recipeFile).toBe("new.yaml");
   });
 });

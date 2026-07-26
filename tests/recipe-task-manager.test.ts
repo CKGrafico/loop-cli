@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import * as yaml from "js-yaml";
 import { RecipeScanner } from "../src/daemon/recipe/scanner.js";
 import { RecipeTaskStore } from "../src/daemon/recipe/task-store.js";
 import { LoopManager } from "../src/daemon/managers/loop-manager.js";
@@ -84,8 +85,8 @@ describe("TaskManager with recipe tasks", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
     scanner.scanDirectory(projectId, tmpDir);
 
@@ -112,8 +113,8 @@ describe("TaskManager with recipe tasks", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
     scanner.scanDirectory(projectId, tmpDir);
 
@@ -131,8 +132,8 @@ describe("TaskManager with recipe tasks", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
     scanner.scanDirectory(projectId, tmpDir);
 
@@ -155,8 +156,8 @@ describe("TaskManager with recipe tasks", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
     scanner.scanDirectory(projectId, tmpDir);
 
@@ -182,8 +183,8 @@ describe("TaskManager with recipe tasks", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
     scanner.scanDirectory(projectId, tmpDir);
 

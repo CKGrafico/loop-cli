@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 import { LoopController } from "../../core/loop/loop-controller.js";
 import type { LoopOptions } from "../../types.js";
 import type { StoredLoop } from "../managers/loop-options.js";

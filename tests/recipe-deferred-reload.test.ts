@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { EventEmitter } from "node:events";
+import * as yaml from "js-yaml";
 import { DeferredReloadManager } from "../src/daemon/recipe/deferred-reload.js";
 import { RecipeScanner } from "../src/daemon/recipe/scanner.js";
 import { RecipeTaskStore } from "../src/daemon/recipe/task-store.js";
@@ -81,8 +82,8 @@ describe("DeferredReloadManager", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory("TestProject", tmpDir);
@@ -101,8 +102,8 @@ describe("DeferredReloadManager", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory("TestProject", tmpDir);
@@ -128,8 +129,8 @@ describe("DeferredReloadManager", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "test.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "test.yaml"),
+      yaml.dump(validRecipe),
     );
 
     scanner.scanDirectory("TestProject", tmpDir);
@@ -147,15 +148,13 @@ describe("DeferredReloadManager", () => {
     const recipesDir = path.join(tmpDir, ".loops/recipes");
     fs.mkdirSync(recipesDir, { recursive: true });
     fs.writeFileSync(
-      path.join(recipesDir, "a.json"),
-      JSON.stringify(validRecipe, null, 2),
+      path.join(recipesDir, "a.yaml"),
+      yaml.dump(validRecipe),
     );
     fs.writeFileSync(
-      path.join(recipesDir, "b.json"),
-      JSON.stringify(
+      path.join(recipesDir, "b.yaml"),
+      yaml.dump(
         { ...validRecipe, loops: [{ ...validRecipe.loops[0], taskId: "echo" }], tasks: [{ ...validRecipe.tasks[0], id: "echo" }] },
-        null,
-        2,
       ),
     );
 
