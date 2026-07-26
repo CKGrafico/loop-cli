@@ -5,6 +5,7 @@ import { executeCommand } from "../command/command-runner.js";
 import { rotateLogIfNeeded } from "../logging/log-rotator.js";
 
 import { parseStdout } from "../context/context-parser.js";
+import { formatContextLog } from "../context/log-context.js";
 import { interpolate } from "../context/template.js";
 import { resolveEffectiveCwd } from "../command/resolve-cwd.js";
 import type { TaskResolver } from "./types.js";
@@ -120,6 +121,7 @@ export async function executeRunImpl(ctrl: ExecuteRunAccess, signal: AbortSignal
   let totalDuration = 0;
 
   try {
+    ctrl.logStream?.write(formatContextLog(chainContext));
     for (const step of taskSteps) {
       if (signal.aborted || ctrl.runAbortController?.signal.aborted) break;
       const stepResults = await Promise.allSettled(

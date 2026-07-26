@@ -10,6 +10,7 @@ import { interpolate } from "../context/template.js";
 import type { LoopController } from "./loop-controller.js";
 import type { TelemetryManager } from "../../daemon/telemetry/telemetry-manager.js";
 import type { TelemetrySpan } from "../../daemon/telemetry/index.js";
+import { formatContextLog } from "../context/log-context.js";
 
 export interface ChainExecuteOptions {
   chainTargetId: string | undefined;
@@ -124,6 +125,10 @@ export function executeChain(options: ChainExecuteOptions): Promise<ChainExecute
       let chainDuration = 0;
 
       const effectiveStream: Writable = isSilent ? nullStream : (logStream ?? nullStream);
+
+      if (!isSilent) {
+        effectiveStream.write(formatContextLog(chainContext));
+      }
 
       // Telemetry: create task span for chained task
       const telemetry = telemetryManager?.getAdapter();
