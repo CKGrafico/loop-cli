@@ -1,19 +1,22 @@
 import type { LoopMeta, LoopStatus } from "../../types.js";
 import { t } from "../i18n/index.js";
 
-export function unescapeCommand(str: string): string {
+export function unescapeCommand(str: unknown): string {
+  if (typeof str !== "string") return String(str ?? "");
   return str
     .replace(/\\\\/g, "\x00")
     .replace(/\\"/g, '"')
     .replace(/\x00/g, "\\");
 }
 
-export function quoteArg(arg: string): string {
-  return /[\s"]/.test(arg) ? `"${arg.replace(/"/g, '\\"')}"` : arg;
+export function quoteArg(arg: unknown): string {
+  const s = typeof arg === "string" ? arg : String(arg ?? "");
+  return /[\s"]/.test(s) ? `"${s.replace(/"/g, '\\"')}"` : s;
 }
 
-export function commandLine(command: string, args: string[]): string {
-  return [unescapeCommand(command), ...args.map((a) => quoteArg(unescapeCommand(a)))].join(" ").trim();
+export function commandLine(command: unknown, args: unknown[]): string {
+  const safeArgs = Array.isArray(args) ? args : [];
+  return [unescapeCommand(command), ...safeArgs.map((a) => quoteArg(unescapeCommand(a)))].join(" ").trim();
 }
 
 export function formatCmd(command: string, args: string[], max = 24): string {
