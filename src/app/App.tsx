@@ -6,6 +6,7 @@ import { useLoopPolling } from "../shared/hooks/useLoopPolling.js";
 import { useDaemonSettings } from "../shared/hooks/useDaemonSettings.js";
 import { useLogStream } from "../shared/hooks/useLogStream.js";
 import { useBreakpoint } from "../shared/hooks/useBreakpoint.js";
+import { BoardLayout } from "./BoardLayout.js";
 import { useToasts } from "../shared/ui/Toast.js";
 import { Header } from "../widgets/header/Header.js";
 import { LeftPanel } from "../widgets/left-panel/LeftPanel.js";
@@ -134,9 +135,9 @@ export function App(props: { onQuit: () => void }): React.ReactNode {
   return (
     <Box flexDirection="column" width="100%" height={process.stdout.rows || 24} backgroundColor={theme.bg.base}>
       <Header daemonStatus={daemonStatus} httpApiEnabled={daemonSettings.reachable ? daemonSettings.httpApiEnabled : undefined} mcpApiEnabled={daemonSettings.reachable ? daemonSettings.mcpApiEnabled : undefined} telemetryEnabled={daemonSettings.reachable ? daemonSettings.telemetryEnabled : undefined} counts={s.counts} activeTab={s.activeTab} onTabChange={s.setActiveTab} tabCounts={s.tabCounts} />
-      <Box key={viewKey(view, s.editTarget, s.editTask)} flexGrow={1}>
+      <Box key={viewKey(view, s.editTarget, s.editTask)} flexGrow={1} width="100%">
         {isBoardView(view) ? (
-          <Box flexDirection={breakpoint === "wide" ? "row" : "column"} flexGrow={1}>
+          <BoardLayout breakpoint={breakpoint}>
             <LeftPanel
               isFocused={(breakpoint === "minimal" || s.focusedPanel === "left") && !anyModalOpen} navActive={inputOwner === "panel"}
               activeTab={s.activeTab} query={s.leftPanelQuery} loops={s.visible} selectedIndex={s.clampedIndex}
@@ -165,8 +166,8 @@ export function App(props: { onQuit: () => void }): React.ReactNode {
                 onProjectDelete={() => { if (s.selectedProjectEntity && !s.selectedProjectEntity.isSystem) handleCommand("delete"); }}
               />
             ) : null}
-            {s.debugMode ? <DebugPanel entries={s.debugEntries} /> : null}
-          </Box>
+            {s.debugMode ? <DebugPanel breakpoint={breakpoint} entries={s.debugEntries} /> : null}
+          </BoardLayout>
         ) : (
           <FormRouter view={view} editTarget={s.editTarget} cloneMode={s.cloneMode}
             editTask={s.editTask} editProject={s.editProject} pendingTaskSelection={s.pendingTaskSelection}

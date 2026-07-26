@@ -1,5 +1,5 @@
 import React from "react";
-import { Box } from "ink";
+import { Box, Text } from "ink";
 import { describe, it, expect, vi } from "vitest";
 import { render } from "ink-testing-library";
 
@@ -22,6 +22,8 @@ import { DebugPanel, type DebugEntry } from "../src/shared/ui/DebugPanel.js";
 import { ToastStack, type Toast } from "../src/shared/ui/Toast.js";
 import { Modal } from "../src/shared/ui/Modal.js";
 import { Header } from "../src/widgets/header/Header.js";
+import { BoardLayout } from "../src/app/BoardLayout.js";
+import { RightPanel } from "../src/widgets/right-panel/RightPanel.js";
 import { WizardForm, type WizardStepConfig } from "../src/widgets/loop-form/WizardForm.js";
 import { CommandInput, sanitizePaste } from "../src/widgets/command-input/CommandInput.js";
 import { SelectModal, SelectValueField } from "../src/shared/ui/SelectModal.js";
@@ -97,6 +99,59 @@ describe("DebugPanel", () => {
     const frame = lastFrame() ?? "";
     expect(frame).toContain("codes=[13]");
     expect(frame).toContain("r=1");
+  });
+});
+
+describe("BoardLayout", () => {
+  it("gives compact stacked panels the full available width", () => {
+    const { lastFrame } = render(
+      <Box width={80} height={10}>
+        <BoardLayout breakpoint="compact">
+          <Box width="100%" borderStyle="single"><Text>NAVIGATOR</Text></Box>
+          <Box width="100%" borderStyle="single"><Text>INSPECTOR</Text></Box>
+        </BoardLayout>
+      </Box>,
+    );
+
+    const borders = (lastFrame() ?? "").split("\n").filter((line) => line.startsWith("┌"));
+    expect(borders).toHaveLength(2);
+    expect(borders.every((line) => line.length === 80)).toBe(true);
+  });
+
+  it("keeps wide panels in one 60/40 row", () => {
+    const { lastFrame } = render(
+      <Box width={100} height={6}>
+        <BoardLayout breakpoint="wide">
+          <Box width="60%" borderStyle="single"><Text>NAVIGATOR</Text></Box>
+          <Box width="40%" borderStyle="single"><Text>INSPECTOR</Text></Box>
+        </BoardLayout>
+      </Box>,
+    );
+
+    const firstLine = (lastFrame() ?? "").split("\n")[0] ?? "";
+    expect(firstLine).toContain("┌");
+    expect(firstLine.length).toBe(100);
+  });
+});
+
+describe("RightPanel responsive height", () => {
+  it("does not reserve a viewport-sized height in compact mode", () => {
+    const { lastFrame } = render(
+      <Box width={80}>
+        <RightPanel
+          activeTab="tasks"
+          breakpoint="compact"
+          isFocused={false}
+          loop={null}
+          selectedRunIndex={0}
+          onSelectRun={() => {}}
+          onOpenRun={() => {}}
+          selectedTask={null}
+        />
+      </Box>,
+    );
+
+    expect((lastFrame() ?? "").split("\n").length).toBeLessThan(10);
   });
 });
 

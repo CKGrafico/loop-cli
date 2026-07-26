@@ -10,8 +10,6 @@ import { RunHistory } from "./RunHistory.js";
 import { FocusableButton } from "../../shared/ui/FocusableButton.js";
 import { commandLine } from "../../shared/ui/format.js";
 
-const DIVIDER = "\u2500".repeat(40);
-
 export function RightPanel(props: {
   isFocused: boolean;
   navActive?: boolean;
@@ -55,7 +53,7 @@ export function RightPanel(props: {
     <Box
       flexDirection="column"
       width={panelWidth}
-      height={panelHeight}
+      height={breakpoint === "wide" ? panelHeight : undefined}
       borderStyle="single"
       borderColor={borderColor}
     >

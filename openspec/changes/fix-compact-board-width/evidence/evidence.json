@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "changeId": "fix-compact-board-width",
+  "required": false,
+  "status": "skipped",
+  "assets": [],
+  "reason": "No UI-touching files (only: DESIGN.md)",
+  "prMarkdown": "## Evidence ⏭️ skipped\n> No UI-touching files (only: DESIGN.md)"
+}

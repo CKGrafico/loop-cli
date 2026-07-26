@@ -245,7 +245,7 @@ The palette is intentionally limited to **4 primary colors + 4 semantic + grays*
 The board view is a vertical stack:
 
 1. **Header** (3 rows): App name + tagline, daemon status + loop counts + tab bar, separator line
-2. **Content area** (flexGrow): Horizontal split of LeftPanel (60%) + RightPanel (40%), optional DebugPanel (22%) when debug mode is on
+2. **Content area** (flexGrow, full terminal width): Wide terminals (`>=110` columns) use a LeftPanel (60%) + RightPanel (40%) row. Compact terminals (`70-109` columns) stack full-width panels. Minimal terminals (`<70` columns) show the full-width navigator only. DebugPanel follows the active layout direction.
 3. **Command input** (6 rows): Bordered box with accent bar, input line with inline placeholder, and hint bar
 
 ### Panel Focus Model
@@ -301,5 +301,5 @@ Loop status is communicated via color:
 
 - **No mouse** - Ink has no mouse API. All interaction is keyboard.
 - **No CSS animations** - Terminal rendering. The only motion is `ink-spinner`.
-- **Terminal-width dependent** - Responsive breakpoint at 80 columns switches panel layout from row to column.
+- **Terminal-width dependent** - Responsive breakpoints: wide (`>=110` columns) uses side-by-side panels; compact (`70-109`) stacks full-width navigator and inspector panels; minimal (`<70`) shows only the full-width navigator.
 - **Color compatibility** - Uses 24-bit ANSI true color. Falls back gracefully on terminals without true color support via Ink's color handling.

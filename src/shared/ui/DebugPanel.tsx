@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, Text } from "ink";
+import type { Breakpoint } from "../hooks/useBreakpoint.js";
 import { darkTheme as theme } from "./theme.js";
 
 export interface DebugEntry {
@@ -21,11 +22,13 @@ export interface DebugEntry {
 
 const MAX_ENTRIES = 12;
 
-export function DebugPanel(props: { entries: DebugEntry[] }): React.ReactNode {
+export function DebugPanel(props: { entries: DebugEntry[]; breakpoint?: Breakpoint }): React.ReactNode {
+  const panelWidth = props.breakpoint === "wide" || props.breakpoint === undefined ? "22%" : "100%";
+
   return (
     <Box
       flexDirection="column"
-      width="22%"
+      width={panelWidth}
       flexShrink={0}
       borderStyle="single"
       borderColor={theme.semantic.warning}
