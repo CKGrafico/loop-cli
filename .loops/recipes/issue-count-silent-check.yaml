@@ -1,0 +1,52 @@
+version: 2
+
+loops:
+  - taskId: fetch-issues
+    interval: 10000
+    intervalHuman: 10s
+    description: Fetch issue count; on failure log silently, on success report
+    maxRuns: 10000
+
+tasks:
+  - id: fetch-issues
+    name: Fetch issues
+    command: gh
+    commandArgs:
+      - issue
+      - list
+      - --state
+      - all
+      - --json
+      - number
+      - --limit
+      - "500"
+      - --jq
+      - "{total: length}"
+    onSuccessTaskId: report
+    onFailureTaskId: log-silent-error
+
+  - id: report
+    name: Report count
+    command: echo
+    commandArgs:
+      - "total issues (open + closed): {{total}}"
+    onSuccessTaskId: null
+    onFailureTaskId: null
+
+  - id: log-silent-error
+    name: Log error (silent)
+    command: echo
+    commandArgs:
+      - "gh failed or not authenticated, nothing to report"
+    silentChain: true
+    onSuccessTaskId: null
+    onFailureTaskId: null
+
+diagram: |
+  ┌─────────────┐       ┌─────────┐
+  │ fetch-issues │──✓──▶│ report  │──▶ end
+  └─────────────┘       └─────────┘
+        │
+        └──✗──▶ ┌──────────────────┐ (silent)
+                │ log-silent-error │──▶ end
+                └──────────────────┘
