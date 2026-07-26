@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { Document, parseDocument } from "yaml";
+import { parseDocument, isMap, isSeq, type YAMLMap } from "yaml";
 import { writeFileAtomic } from "../../shared/fs-utils.js";
 
 type SelfWriteNotifier = (filePath: string, content: string) => void;
@@ -20,9 +20,9 @@ export interface RecipeOverrideFields {
  * Writes recipe override fields back to the YAML file.
  *
  * Uses the `yaml` package's Document API for AST-preserving round-trips:
- * only the touched leaf fields (`loops[0].intervalHuman`, `maxRuns`,
- * `context`) are mutated in place. Every other node, including a
- * `diagram:` block scalar holding ASCII art, survives byte-for-byte.
+ * only the touched leaf fields (loops[0].intervalHuman, maxRuns, context)
+ * are mutated in place. Every other node, including a diagram block scalar
+ * holding ASCII art, survives byte-for-byte.
  */
 export function writeRecipeOverrides(
   filePath: string,
@@ -40,28 +40,30 @@ export function writeRecipeOverrides(
   }
 
   const root = doc.contents;
-  if (!root || root.type !== "MAP") {
+  if (!root || !isMap(root)) {
     throw new Error(`Recipe file has no root mapping: ${filePath}`);
   }
 
   const loopsNode = root.get("loops");
-  if (!loopsNode || loopsNode.type !== "SEQ" || (loopsNode.items.length ?? 0) === 0) {
+  if (!loopsNode || !isSeq(loopsNode) || loopsNode.items.length === 0) {
     throw new Error(`Recipe file has no loops: ${filePath}`);
   }
 
   const loop = loopsNode.items[0];
-  if (!loop || loop.type !== "MAP") {
+  if (!loop || !isMap(loop)) {
     throw new Error(`Recipe loops[0] is not a mapping: ${filePath}`);
   }
 
+  const loopMap = loop as YAMLMap;
+
   if (overrides.intervalHuman !== undefined) {
-    loop.set("intervalHuman", overrides.intervalHuman);
+    loopMap.set("intervalHuman", doc.createNode(overrides.intervalHuman));
   }
   if (overrides.maxRuns !== undefined) {
-    loop.set("maxRuns", overrides.maxRuns);
+    loopMap.set("maxRuns", doc.createNode(overrides.maxRuns));
   }
   if (overrides.context !== undefined) {
-    loop.set("context", overrides.context);
+    loopMap.set("context", doc.createNode(overrides.context));
   }
 
   const content = String(doc);
