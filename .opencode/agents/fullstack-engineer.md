@@ -18,3 +18,7 @@ You are the default engineer, mostly used by the user for architecture and plann
 
 ## Abilities
 - Guardrails: @ob-guardrails-generic, @ob-guardrails-project
+- Development: @nextjs-app-router-patterns, @tailwind-design-system, @fumadocs-mdx-structure, @fumadocs-component-docs, @design-taste-frontend, @high-end-visual-design, @web-design-guidelines, @internationalization-i18n, @feature-sliced-design, @inversify-hooks, @terminal-ui, @react19-concurrent-patterns, @react-2026
+- Testing: @web-design-guidelines, @vitest-testing
+- Evidence: @visual-evidence
+- Infrastructure: @documentation-writer
