@@ -97,6 +97,40 @@ The AI Task is the only Task that can fail unpredictably. The scaffold absorbs t
 
 Every AI Task also needs a timeout and retry policy. Retry transient runner or network failures only. Route invalid output, failed verification, and repository-state errors to recovery without retrying blindly.
 
+## PR CI repair loop
+
+Creating a pull request is not finalization. Required remote checks run after
+the branch is pushed, so the chain needs a second verification gate before any
+merge or issue closure:
+
+```
+create PR (concrete) → wait for required checks (concrete) → merge policy (concrete)
+                              └── failed checks → diagnose and repair (AI)
+                                                     → commit and push (concrete)
+                                                     → comment on PR (concrete)
+                                                     → wait for required checks
+```
+
+The check Task is the branch point. It waits for required checks and exits
+zero only when they pass. A failed check routes to an AI Task that diagnoses
+the logs and fixes repository-owned defects. The repair path returns to the
+same check Task after a verified push.
+
+Bound this cycle with `maxRuns` on the check Task. When the limit is reached,
+or when the failure is external or unsafe to fix, leave the PR open, mark the
+work item for human review, and clean the local worktree. Do not merge a PR
+with failing or unknown checks.
+
+Keep the AI repair prompt narrow: inspect failed checks and logs, fix only
+actionable defects, run repository checks, and never weaken CI, coverage,
+security, lint, test, or build gates. The concrete tasks own pushing,
+commenting, merge policy, labels, and issue closure.
+
+After each successful repair push, add one concise PR comment with the failed
+checks, the repair summary, and local verification. Include a commit SHA or
+another stable repair identifier so retries can detect and avoid duplicate
+comments.
+
 ## Recovery for AI Tasks
 
 AI Tasks fail more often than concrete Tasks - the agent may produce broken code, misunderstand the objective, or time out. Recovery must be **state-aware**: revert the external markers the reservation Task set, undo local changes, and return the work item to its pre-reservation state.

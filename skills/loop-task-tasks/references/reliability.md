@@ -52,6 +52,18 @@ Retry transient transport failures. Do not retry invalid configuration, failed v
 
 Separate inspect, reserve, mutate, verify, and finalize. Each mutation handles an already-completed state safely. A repeated reservation must not create duplicate labels. A repeated finalization must not create duplicate commits, pushes, pull requests, comments, or closures.
 
+For pull-request CI repair, treat the remote checks as a verification gate,
+not a notification. Create the PR once, wait for required checks, and route a
+failed check to a bounded repair cycle. Each successful repair needs a new
+commit and push before checks run again. Record the repair in one PR comment
+identified by that commit SHA; retries must not post the same comment twice.
+
+Only a green required-check gate may enter a merge Task. An administrator
+merge option can bypass branch protection, so use it only when an explicit
+merge policy permits it and only after the gate succeeds. External outages,
+runner failures, and exhausted repair attempts must leave the PR open for
+human review rather than triggering a speculative change or forced merge.
+
 ## Output contracts
 
 Every context-producing Task names its output schema and required keys. Validate the schema before interpolation. Empty output, malformed JSON, missing keys, and unexpected types are failures. Never pass an empty interpolation into a mutation command.

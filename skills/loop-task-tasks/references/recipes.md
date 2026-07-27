@@ -111,11 +111,57 @@ git commit -m "Resolve #{{number}}: {{title}}" || true
 git push -u origin HEAD
 ```
 ```
-gh pr create --title "Resolve #{{number}}: {{title}}" --body "Closes #{{number}}" --label code:done --base main
+sh -c 'isBug=$(gh issue view {{number}} --json labels --jq "[.labels[].name] | index(\"bug\") != null"); prUrl=$(gh pr create --title "Resolve #{{number}}: {{title}}" --body "Closes #{{number}}" --label code:review --base main); printf "{\"prUrl\":\"%s\",\"isBug\":%s}\n" "$prUrl" "$isBug"'
 ```
+
+These steps create the PR and expose its URL to later Tasks. Do not merge or
+close the issue here. `isBug` is one example of a merge-policy flag; define it
+from the work item's labels or your equivalent trusted state. Remote CI has not
+yet verified the pushed commit.
+
+## PR CI gate
+
+After PR creation, use a concrete check Task before merge policy or issue
+closure:
+
 ```
-gh pr merge --squash --delete-branch
+gh pr checks "{{prUrl}}" --required --watch --fail-fast
 ```
+
+- `--watch` waits for checks to finish; use a timeout longer than the slowest
+  required workflow.
+- Exit zero routes to the merge-policy Task. A non-zero exit routes to the
+  repair Task. The repair task must inspect `gh pr checks` and `gh run view`
+  logs rather than guessing from the check name alone.
+- Make the check Task the target of the repair back-edge and set a small,
+  explicit `maxRuns` limit. When repairs are exhausted or a failure is not
+  repository-owned, leave the PR open and transition the issue to review.
+
+The repair path is:
+
+```
+AI diagnose and fix → local verification → commit and push → PR comment → required-check gate
+```
+
+The PR comment should name failed checks, summarize the repair, and list local
+verification. Use the pushed commit SHA in the comment or lookup so a retry
+does not create duplicates.
+
+## Merge policy and PR closure
+
+Merge only after the required-check gate succeeds. A policy may keep ordinary
+PRs open for review while merging a narrowly defined class, such as trusted
+bug fixes, automatically:
+
+```
+sh -c 'if [ "{{isBug}}" = "true" ]; then gh pr merge "{{prUrl}}" --squash --delete-branch; fi'
+```
+
+Do not use an administrator merge option to bypass a failing or pending check.
+If repository policy explicitly requires that option, invoke it only after the
+green gate. Close the issue only when its PR was merged; otherwise label it as
+ready for review and leave it open.
+
 ```
 gh issue edit {{number}} --add-label code:done --remove-label code:doing --remove-label code:review
 ```
@@ -125,8 +171,6 @@ gh issue close {{number}}
 ```
 git checkout -- . && git clean -fd && git switch main
 ```
-
-These are sequential **steps** within one finalization Task. Each step runs after the previous completes. The PR is created and squash-merged immediately. No approval step is needed for autonomous loops. The issue is closed and the branch returns to main.
 
 ### Azure DevOps
 
@@ -214,25 +258,8 @@ Do not compare serialized OpenSpec output to `[]`: `openspec list --json` return
 
 ## PR Closure
 
-After a PR is created, merge it and close the work item.
-
-### GitHub Issues
-
-```
-git push -u origin HEAD
-```
-```
-gh issue edit {{number}} --remove-label "code:pr" --add-label "code:done"
-```
-```
-gh pr merge --squash --delete-branch
-```
-```
-gh issue close {{number}}
-```
-```
-git checkout main
-```
+For GitHub, use the required-check gate and merge policy above. Never merge a
+newly created PR directly from this section.
 
 ### Azure DevOps
 
