@@ -214,13 +214,20 @@ export async function executeCommand(
   const stdoutCapture = (captureStdout || !!detectedIntegrationId)
     ? new StdoutCaptureTransform(MAX_CONTEXT_STDOUT_BYTES)
     : null;
+  const stderrCapture = (captureStdout || !!detectedIntegrationId)
+    ? new StdoutCaptureTransform(MAX_CONTEXT_STDOUT_BYTES)
+    : null;
 
   if (stdoutCapture) {
     child.stdout!.pipe(stdoutCapture).pipe(logStream, { end: false });
   } else {
     child.stdout!.pipe(logStream, { end: false });
   }
-  child.stderr!.pipe(logStream, { end: false });
+  if (stderrCapture) {
+    child.stderr!.pipe(stderrCapture).pipe(logStream, { end: false });
+  } else {
+    child.stderr!.pipe(logStream, { end: false });
+  }
 
   try {
     const result = await child;
@@ -259,6 +266,7 @@ export async function executeCommand(
       startedAt,
       endedAt,
       ...(captureStdout && stdoutCapture ? { stdout: stdoutCapture.getCaptured() } : {}),
+      ...(captureStdout && stderrCapture ? { stderr: stderrCapture.getCaptured() } : {}),
     };
   } catch (error: unknown) {
     const endedAt = new Date();
@@ -299,6 +307,7 @@ export async function executeCommand(
       startedAt,
       endedAt,
       ...(captureStdout && stdoutCapture ? { stdout: stdoutCapture.getCaptured() } : {}),
+      ...(captureStdout && stderrCapture ? { stderr: stderrCapture.getCaptured() } : {}),
     };
   }
 }
