@@ -161,6 +161,11 @@ The canonical hybrid chain: selection (concrete) → reservation (concrete) → 
 
 Keep the AI payload focused on interpolated values (`{{number}}`, `{{title}}`, `{{body}}`) rather than vague natural-language search instructions. For batch work, a concrete Task emits a JSON array and the AI Task receives that previous Task's raw array through `{{output}}`.
 
+When the target repository provides a project command or skill for the work,
+invoke it in the AI prompt instead of copying its workflow into the prompt.
+Keep shell verification, label transitions, commits, and other deterministic
+Tasks concrete; project commands belong only in AI runner Tasks.
+
 For hybrid chain design, token efficiency, AI Task success criteria, and recovery patterns, see [references/ai-agent-patterns.md](references/ai-agent-patterns.md).
 
 For interface-specific syntax vocabulary for composing concrete tasks, see [references/recipes.md](references/recipes.md).

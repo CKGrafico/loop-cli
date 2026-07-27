@@ -60,6 +60,30 @@ Effective context keys for AI Tasks:
 
 Keep the AI payload focused on the interpolated values. The agent receives structured data, not a vague re-description of what to search for.
 
+## Project commands and skills
+
+When an AI runner works in a repository that provides project commands or
+skills, invoke the command and let it load its own abilities and derive its own
+checks. Do not duplicate a command's internal shell workflow in the prompt.
+
+```yaml
+command: opencode
+commandArgs:
+  - run
+  - --agent
+  - fullstack-engineer
+  - /repo-audit
+```
+
+Use prompts only for task-specific context, such as `{{number}}`, `{{title}}`,
+`{{body}}`, or `{{output}}`. Use a project command only when it is installed
+for that runner. A Claude Task may invoke an available project command or skill
+the same way; do not assume an OpenCode-only command exists in Claude.
+
+Do not move deterministic shell verification into an AI Task merely because a
+project command exists. Keep concrete verification, state changes, commits,
+and pull-request actions in their own Tasks.
+
 ## AI Task Placement
 
 Place the AI Task at the branch point of the chain. Everything before it is concrete (scaffold). Everything after it depends on its result:
