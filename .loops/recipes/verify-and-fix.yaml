@@ -1,0 +1,66 @@
+version: 2
+
+loops:
+  - taskId: verify
+    intervalHuman: "0"
+    description: >
+      Verify → fix → verify pattern. Runs lint, typecheck, and tests.
+      On failure, an AI agent receives the previous task output via {{output}}
+      and attempts a fix. Retries up to 3 times before completing.
+
+tasks:
+  - id: verify
+    name: Verify (lint + typecheck + test)
+    command: sh
+    commandArgs:
+      - -c
+      - >
+        pnpm lint && pnpm typecheck && pnpm test
+    onSuccessTaskId: complete
+    onFailureTaskId: fix
+    maxRuns: 3
+
+  - id: fix
+    name: Fix with AI using {{output}}
+    command: opencode
+    commandArgs:
+      - run
+      - -- "Fix the following errors: {{output}}"
+    onSuccessTaskId: verify
+    onFailureTaskId: fail
+
+  - id: complete
+    name: Done
+    command: echo
+    commandArgs:
+      - "All checks passed"
+    onSuccessTaskId: null
+    onFailureTaskId: null
+
+  - id: fail
+    name: Failed after retries
+    command: echo
+    commandArgs:
+      - "Verification failed after 3 attempts"
+    onSuccessTaskId: null
+    onFailureTaskId: null
+
+diagram: |
+  flowchart TD
+      verifyStart("Start<br/>Run verify") --> verifyTask
+      verifyTask["Verify<br/>lint + typecheck + test<br/>↻3"] -->|✓| completeTask
+      verifyTask -.->|✗| fixTask
+      fixTask("Fix<br/>AI fix using {{output}}") -->|✓| verifyTask
+      fixTask -.->|✗| failTask
+      completeTask(("Complete<br/>All checks passed"))
+      failTask(("Fail<br/>Verification failed after retries"))
+      classDef start fill:#ffffff,stroke:#172033,stroke-width:2px,color:#172033
+      classDef action fill:#eef0ff,stroke:#554cff,stroke-width:2px,color:#172033
+      classDef decision fill:#fff8e8,stroke:#c75b00,stroke-width:2px,color:#172033
+      classDef failure fill:#fff0f0,stroke:#ef2929,stroke-width:2px,color:#8b1a1a
+      classDef success fill:#e8f8ec,stroke:#18883c,stroke-width:2px,color:#145a32
+      class verifyStart start
+      class fixTask action
+      class verifyTask decision
+      class failTask failure
+      class completeTask success
