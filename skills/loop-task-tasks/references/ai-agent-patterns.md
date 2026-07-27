@@ -56,6 +56,7 @@ Effective context keys for AI Tasks:
 | `title` | Selection Task stdout | Describe the objective |
 | `body` | Selection Task stdout | Provide the full specification |
 | `resultSummary` | Prior AI Task stdout | Chain AI Tasks sequentially |
+| `output` | Auto-captured stdout+stderr of previous task | "Fix errors: {{output}}" |
 
 Keep the AI payload focused on the interpolated values. The agent receives structured data, not a vague re-description of what to search for.
 

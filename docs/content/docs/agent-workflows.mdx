@@ -154,6 +154,45 @@ GET /api/loops/loop_abc123/logs?tail=50
 }
 ```
 
+## Verify then fix
+
+A common agent workflow is to verify code on a cadence, then have an AI agent fix whatever broke. Loop-task's stderr capture makes this simple.
+
+Run a verify task that lints, tests, and builds. When it fails, the failure chains to an AI fix task that reads `{{output}}` to see the actual errors. Here is the pattern as a recipe:
+
+```yaml
+version: 2
+
+loops:
+  - taskId: verify
+    intervalHuman: "30m"
+    description: Verify then fix
+    immediate: true
+
+tasks:
+  - id: verify
+    name: Lint, test, build
+    command: sh -c 'pnpm lint && pnpm test && pnpm build'
+    onSuccessTaskId: commit
+    onFailureTaskId: fix
+
+  - id: fix
+    name: AI fix
+    command: opencode run --agent fullstack-engineer "Fix errors: {{output}}"
+    onSuccessTaskId: verify
+    onFailureTaskId: null
+
+  - id: commit
+    name: Commit clean build
+    command: sh -c 'git add -A && git commit -m "verified: lint, tests, build"'
+    onSuccessTaskId: null
+    onFailureTaskId: null
+```
+
+When the verify task fails, its stderr (compiler errors, test failures, lint violations) is captured into `{{output}}`. The fix task uses `{{output}}` to see exactly what went wrong. No custom JSON wrappers needed.
+
+The fix task chains back to verify on success, so the pipeline retries until everything passes. Once verify succeeds, it chains to commit instead.
+
 ## Tips
 
 - **Set `--max-runs` to limit execution.** Without it, a loop runs forever. Add `--max-runs 10` to stop after 10 executions. This prevents runaway agent loops.

@@ -136,6 +136,52 @@ diagram: |
 
 See [Task Chaining](/docs/task-chaining) for the full context-sharing and template-interpolation reference.
 
+## Verify and fix recipe
+
+This recipe runs lint, tests, and a build on a cadence. If the verify task fails, an AI agent reads the errors from `{{output}}` and fixes them. The fix chains back to verify, so the pipeline retries until everything passes. On success, verify chains to commit.
+
+```yaml
+version: 2
+
+loops:
+  - taskId: verify
+    intervalHuman: "30m"
+    description: Verify code, then fix failures with an AI agent
+    immediate: true
+
+tasks:
+  - id: verify
+    name: Lint, test, build
+    command: sh -c 'pnpm lint && pnpm test && pnpm build'
+    onSuccessTaskId: commit
+    onFailureTaskId: fix
+
+  - id: fix
+    name: AI fix
+    command: opencode run --agent fullstack-engineer "Fix errors: {{output}}"
+    onSuccessTaskId: verify
+    onFailureTaskId: null
+
+  - id: commit
+    name: Commit clean build
+    command: sh -c 'git add -A && git commit -m "verified: lint, tests, build"'
+    onSuccessTaskId: null
+    onFailureTaskId: null
+
+diagram: |
+  ┌────────┐       ┌────────┐
+  │ verify │───✓──▶│ commit │──▶ end
+  └────────┘       └────────┘
+       │
+       ✗
+       ▼
+  ┌────────┐       ┌────────┐
+  │  fix   │───✓──▶│ verify │ (retry)
+  └────────┘       └────────┘
+```
+
+When `verify` fails, its stderr (compiler errors, test failures, lint violations) is merged into the `{{output}}` context key. The `fix` task interpolates `{{output}}` into its prompt, so the agent sees the same error output you would see in your terminal. Once the agent fixes the code, `fix` succeeds and chains back to `verify`, which re-runs the checks. The loop continues until `verify` passes and chains to `commit`.
+
 ## Error handling with silent chains
 
 Use `silentChain: true` on error-handler tasks to prevent their output from overwriting the shared context. This is useful when a failure handler logs a message but should not pollute downstream data:
