@@ -145,15 +145,29 @@ export async function executeRunImpl(ctrl: ExecuteRunAccess, signal: AbortSignal
       ctrl.checkLogRotation();
 
       let stepStdout = "";
+      let stepStderr = "";
       for (const r of stepResults) {
         if (r.status === "fulfilled") {
           totalDuration += r.value.duration;
           if (r.value.stdout) stepStdout += (stepStdout ? "\n" : "") + r.value.stdout;
+          if (r.value.stderr) stepStderr += (stepStderr ? "\n" : "") + r.value.stderr;
         }
       }
 
-      if (shouldCaptureStdout && stepStdout) {
-        const parsed = parseStdout(stepStdout);
+      if (shouldCaptureStdout && (stepStdout || stepStderr)) {
+        // Try parsing stdout first — JSON-producing tasks put structured data on stdout.
+        let parsed = parseStdout(stepStdout);
+        // If stdout is empty or plain text, include stderr in the fallback so
+        // the {{output}} context key carries compiler/test/lint errors to the next task.
+        if (parsed === null || parsed.output) {
+          const combined = stepStderr
+            ? (stepStdout ? stepStdout + "\n" + stepStderr : stepStderr)
+            : stepStdout;
+          const combinedParsed = parseStdout(combined);
+          if (combinedParsed !== null) {
+            parsed = combinedParsed;
+          }
+        }
         if (parsed !== null) {
           Object.assign(chainContext, parsed);
         }

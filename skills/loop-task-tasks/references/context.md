@@ -95,7 +95,15 @@ A Task producing plain text **always** overwrites the `output` key. To preserve 
 
 In JSONL output, later lines overwrite earlier lines for the same key.
 
-## 6. Interpolation
+## 6. Stderr in context
+
+When stdout is valid JSON (an object), its keys are merged as described in section 5. Stderr is ignored for context in this case and kept in logs only.
+
+When stdout is non-JSON or empty, stderr is combined with stdout and the combined text is parsed together. `{{output}}` then includes error messages, compiler output, test failures, and other diagnostic text the Task wrote to stderr.
+
+AI fix tasks that read `{{output}}` automatically see what went wrong. No custom JSON wrapper is needed to surface error text into context.
+
+## 7. Interpolation
 
 `{{key}}` placeholders in command and arguments are replaced with context values before every Task executes.
 
@@ -124,7 +132,7 @@ In JSONL output, later lines overwrite earlier lines for the same key.
 - Does not support nested `{{outer.{inner}}}` syntax.
 - Does not support default values or conditional expressions.
 
-## 7. Context Lifetime
+## 8. Context Lifetime
 
 | Boundary | Behaviour |
 |---|---|
@@ -134,7 +142,7 @@ In JSONL output, later lines overwrite earlier lines for the same key.
 | Between Loops | Context is **not shared** |
 | On persistence | Context is **never persisted** |
 
-## 8. Edge Cases
+## 9. Edge Cases
 
 | Edge case | Behaviour |
 |---|---|

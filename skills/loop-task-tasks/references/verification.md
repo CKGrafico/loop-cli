@@ -69,3 +69,21 @@ work → verify → finalize
 ```
 
 An AI Task exiting `0` means only that the runner completed. It does not prove that the requested change is correct.
+
+## Simplified verification with stderr capture
+
+When the verification Task fails, its stderr is captured into `{{output}}`. A follow-up AI fix task reads it directly without any wrapper script.
+
+Verify task:
+
+```sh
+sh -c 'pnpm lint && pnpm typecheck && pnpm test && pnpm build'
+```
+
+Fix task payload:
+
+```text
+Previous task output: {{output}}. Fix everything that failed.
+```
+
+The Python JSON wrapper pattern shown earlier in this document is no longer required. `{{output}}` already captures stderr: compiler errors, test failures, lint violations. The fix task receives the full failure output via interpolation.
