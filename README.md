@@ -284,15 +284,15 @@ When tasks are arranged in a chain (on-success or on-failure), context flows bet
 
 ### How it works
 
-1. **Auto-capture** - stdout from every task in the chain is captured before the next task starts.
-2. **Parse rules** - captured output is parsed by content type:
-   - **JSON object** (`{"key": "value"}`) - each key is merged into the shared context.
+1. **Auto-capture** - stdout and stderr from every task in the chain are captured before the next task starts.
+2. **Parse rules** - stdout is parsed by content type:
+    - **JSON object** (`{"key": "value"}`) - each key is merged into the shared context.
    - **JSONL** (one JSON object per line) - each line's keys are merged in order.
-   - **Plain text** - stored under a single `output` key.
+    - **Plain text** - stored under a single `output` key.
    - **Empty output** - no change to context.
 3. **Template interpolation** - use `{{key}}` in the command or arguments of any task. Before spawning, `{{key}}` is replaced with the current value of `key` from the shared context.
 4. **Merge semantics** - keys accumulate across the chain. Task 1 produces `{ "id": "42" }`, task 2 can use `{{id}}` and also add `{ "status": "ok" }`. Task 3 sees both.
-5. **Output clobbering** - plain text tasks overwrite the `output` key. Use JSON with named keys when data must survive across multiple downstream tasks.
+5. **Latest command output** - `{{output}}` always contains stdout plus stderr from the immediately preceding task. JSON fields such as `{{number}}`, `{{title}}`, and `{{body}}` remain available until a later task explicitly emits the same key.
 6. **Context lifecycle** - context is built fresh each loop iteration and exists only in memory. It is never persisted to disk.
 
 ### Example: Issue Refinement Chain

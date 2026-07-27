@@ -31,7 +31,7 @@ The system SHALL cap stdout capture at MAX_CONTEXT_STDOUT_BYTES (1MB). Output ex
 
 ### Requirement: Context parsing rules
 
-The system SHALL parse captured stdout into structured key-value pairs using the following precedence: (1) empty stdout produces no context update, (2) valid JSON object merges its keys into context, (3) valid JSON primitive (string/number from JSON.parse) is stored under the `output` key, (4) JSONL (multiple JSON objects on separate lines) merges each line's keys sequentially, (5) any other text is stored under the `output` key.
+The system SHALL parse captured stdout into structured key-value pairs using the following precedence: (1) empty stdout produces no structured context update, (2) valid JSON object merges its keys into context, (3) valid JSON primitive (string/number from JSON.parse) is stored under the `output` key, (4) JSONL (multiple JSON objects on separate lines) merges each line's keys sequentially, (5) any other text is stored under the `output` key. After parsing, the system SHALL set `output` to stdout plus stderr from that Task, preserving named JSON keys such as `number`, `title`, and `body`.
 
 #### Scenario: Empty stdout leaves context unchanged
 
@@ -42,6 +42,7 @@ The system SHALL parse captured stdout into structured key-value pairs using the
 
 - **WHEN** a task's stdout is `{"number": 123, "title": "Fix login"}`
 - **THEN** `number` and `title` keys are merged into the chain context
+- **AND** `output` contains that Task's stdout and stderr
 
 #### Scenario: JSONL stdout merges each line
 

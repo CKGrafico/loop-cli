@@ -1,22 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { parseStdout } from "../src/core/context/context-parser.js";
+import { mergeCommandOutput, parseStdout } from "../src/core/context/context-parser.js";
 import type { ExecutionResult } from "../src/types.js";
 
-// Mirrors the combine-then-parse logic in run-executor.ts and chain-executor.ts.
-// When stdout is empty or non-JSON, stderr is appended so the {{output}} context
-// key carries error messages to the next task.
 function parseWithStderr(stdout: string, stderr: string): Record<string, unknown> | null {
-  let parsed = parseStdout(stdout);
-  if (parsed === null || parsed.output) {
-    const combined = stderr
-      ? (stdout ? stdout + "\n" + stderr : stderr)
-      : stdout;
-    const combinedParsed = parseStdout(combined);
-    if (combinedParsed !== null) {
-      parsed = combinedParsed;
-    }
-  }
-  return parsed;
+  const context: Record<string, unknown> = {};
+  mergeCommandOutput(context, stdout, stderr);
+  return Object.keys(context).length === 0 ? null : context;
 }
 
 describe("stderr capture into output context", () => {
@@ -32,11 +21,31 @@ describe("stderr capture into output context", () => {
     });
   });
 
-  it("ignores stderr when stdout is valid JSON", () => {
+  it("preserves JSON fields and captures stdout and stderr as output", () => {
     const result = parseWithStderr('{"number": 123}', "some warning");
 
-    expect(result).toEqual({ number: 123 });
-    expect(result).not.toHaveProperty("output");
+    expect(result).toEqual({
+      number: 123,
+      output: '{"number": 123}\nsome warning',
+    });
+  });
+
+  it("keeps existing structured context while replacing output with latest command output", () => {
+    const context: Record<string, unknown> = {
+      number: 122,
+      title: "Issue title",
+      body: "Issue body",
+      output: "previous output",
+    };
+
+    mergeCommandOutput(context, "implementation logs", "");
+
+    expect(context).toEqual({
+      number: 122,
+      title: "Issue title",
+      body: "Issue body",
+      output: "implementation logs",
+    });
   });
 
   it("ExecutionResult accepts an optional stderr field", () => {

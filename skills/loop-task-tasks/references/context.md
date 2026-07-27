@@ -85,21 +85,21 @@ Parsed output is merged via `Object.assign(chainContext, parsed)`.
 |---|---|
 | New key | Added to the context |
 | Existing key | Overwritten (shallow replacement) |
-| The `output` key | Overwritten every time a Task produces plain-text output |
+| The `output` key | Overwritten with stdout plus stderr from each Task |
 | Structured keys (from JSON) | Each key added or overwritten individually |
 | No deep merge | Nested objects replaced at the top level |
 
 ### Key clobbering
 
-A Task producing plain text **always** overwrites the `output` key. To preserve values across chain steps, use **named JSON keys**.
+A Task's stdout plus stderr always overwrites the `output` key. Named JSON keys remain available until a later Task emits the same key.
 
 In JSONL output, later lines overwrite earlier lines for the same key.
 
 ## 6. Stderr in context
 
-When stdout is valid JSON (an object), its keys are merged as described in section 5. Stderr is ignored for context in this case and kept in logs only.
+When stdout is valid JSON (an object), its keys are merged as described in section 5. `{{output}}` still contains that task's stdout plus stderr.
 
-When stdout is non-JSON or empty, stderr is combined with stdout and the combined text is parsed together. `{{output}}` then includes error messages, compiler output, test failures, and other diagnostic text the Task wrote to stderr.
+When stdout is non-JSON or empty, `{{output}}` contains stdout plus stderr. It includes error messages, compiler output, test failures, and other diagnostic text the Task wrote to stderr.
 
 AI fix tasks that read `{{output}}` automatically see what went wrong. No custom JSON wrapper is needed to surface error text into context.
 

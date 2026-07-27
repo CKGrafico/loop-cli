@@ -5,7 +5,7 @@ import type { ExecutionResult, TaskCommand, TaskDefinition, TaskStep } from "../
 import { DEFAULT_TASK_MAX_RUNS } from "../../types.js";
 import { executeCommand } from "../command/command-runner.js";
 import { t } from "../../shared/i18n/index.js";
-import { parseStdout } from "../context/context-parser.js";
+import { mergeCommandOutput } from "../context/context-parser.js";
 import { interpolate } from "../context/template.js";
 import type { LoopController } from "./loop-controller.js";
 import type { TelemetryManager } from "../../daemon/telemetry/telemetry-manager.js";
@@ -190,22 +190,7 @@ export function executeChain(options: ChainExecuteOptions): Promise<ChainExecute
         }
 
         if (shouldCaptureStdout && (stepStdout || stepStderr)) {
-          // Try parsing stdout first — JSON-producing tasks put structured data on stdout.
-          let parsed = parseStdout(stepStdout);
-          // If stdout is empty or plain text, include stderr in the fallback so
-          // the {{output}} context key carries compiler/test/lint errors to the next task.
-          if (parsed === null || parsed.output) {
-            const combined = stepStderr
-              ? (stepStdout ? stepStdout + "\n" + stepStderr : stepStderr)
-              : stepStdout;
-            const combinedParsed = parseStdout(combined);
-            if (combinedParsed !== null) {
-              parsed = combinedParsed;
-            }
-          }
-          if (parsed !== null) {
-            Object.assign(chainContext, parsed);
-          }
+          mergeCommandOutput(chainContext, stepStdout, stepStderr);
         }
 
         const stepFailure = stepResults.some(

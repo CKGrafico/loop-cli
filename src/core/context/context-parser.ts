@@ -57,3 +57,19 @@ export function parseStdout(raw: string): Record<string, unknown> | null {
 
   return { output: trimmed };
 }
+
+export function mergeCommandOutput(
+  context: Record<string, unknown>,
+  stdout: string,
+  stderr: string,
+): void {
+  const parsed = parseStdout(stdout);
+  if (parsed !== null) {
+    Object.assign(context, parsed);
+  }
+
+  const output = [stdout, stderr].filter(Boolean).join("\n").trim();
+  if (output.length > 0) {
+    context.output = output;
+  }
+}

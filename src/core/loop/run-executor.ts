@@ -4,7 +4,7 @@ import type { LoopOptions, RunRecord, TaskCommand, TaskStep, ExecutionResult } f
 import { executeCommand } from "../command/command-runner.js";
 import { rotateLogIfNeeded } from "../logging/log-rotator.js";
 
-import { parseStdout } from "../context/context-parser.js";
+import { mergeCommandOutput } from "../context/context-parser.js";
 import { formatContextLog } from "../context/log-context.js";
 import { interpolate } from "../context/template.js";
 import { resolveEffectiveCwd } from "../command/resolve-cwd.js";
@@ -155,22 +155,7 @@ export async function executeRunImpl(ctrl: ExecuteRunAccess, signal: AbortSignal
       }
 
       if (shouldCaptureStdout && (stepStdout || stepStderr)) {
-        // Try parsing stdout first — JSON-producing tasks put structured data on stdout.
-        let parsed = parseStdout(stepStdout);
-        // If stdout is empty or plain text, include stderr in the fallback so
-        // the {{output}} context key carries compiler/test/lint errors to the next task.
-        if (parsed === null || parsed.output) {
-          const combined = stepStderr
-            ? (stepStdout ? stepStdout + "\n" + stepStderr : stepStderr)
-            : stepStdout;
-          const combinedParsed = parseStdout(combined);
-          if (combinedParsed !== null) {
-            parsed = combinedParsed;
-          }
-        }
-        if (parsed !== null) {
-          Object.assign(chainContext, parsed);
-        }
+        mergeCommandOutput(chainContext, stepStdout, stepStderr);
       }
 
       const stepFailure = stepResults.some(
