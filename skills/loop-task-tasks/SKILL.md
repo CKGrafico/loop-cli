@@ -129,7 +129,7 @@ chainContext = { ...task.context, ...loop.context }
 
 Loop context overrides Task context for same keys.
 
-After each Task with chain successors (or multi-step/parallel commands), stdout is parsed and merged via `Object.assign`. Later keys overwrite earlier keys.
+After each Task with chain successors (or multi-step/parallel commands), stdout is parsed and named JSON keys are merged via `Object.assign`. `{{output}}` is always replaced with that Task's stdout plus stderr.
 
 Before every Task executes, `{{key}}` placeholders in its payload are replaced with context values. Missing keys produce empty strings. Values are shell-escaped.
 
@@ -159,7 +159,7 @@ An AI Task - one whose payload invokes an agent or language model - is expensive
 
 The canonical hybrid chain: selection (concrete) → reservation (concrete) → AI work → finalization (concrete) on success, recovery (concrete) on failure. The AI Task is the branch point.
 
-Keep the AI payload focused on interpolated values (`{{number}}`, `{{title}}`, `{{body}}`) rather than vague natural-language search instructions.
+Keep the AI payload focused on interpolated values (`{{number}}`, `{{title}}`, `{{body}}`) rather than vague natural-language search instructions. For batch work, a concrete Task emits a JSON array and the AI Task receives that previous Task's raw array through `{{output}}`.
 
 For hybrid chain design, token efficiency, AI Task success criteria, and recovery patterns, see [references/ai-agent-patterns.md](references/ai-agent-patterns.md).
 

@@ -25,7 +25,9 @@ tasks:
     command: opencode
     commandArgs:
       - run
-      - -- "Fix the following errors: {{output}}"
+      - --agent
+      - fullstack-engineer
+      - "Fix the following errors: {{output}}"
     onSuccessTaskId: verify
     onFailureTaskId: fail
 

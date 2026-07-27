@@ -28,6 +28,14 @@ git checkout -- . && git clean -fd
 
 Add this to verify or finalize tasks that follow AI work. `git checkout -- .` reverts tracked file changes, `git clean -fd` removes untracked files and directories. Never use `git clean -fdx` (the `-x` flag removes ignored files like `node_modules`).
 
+## Dependency changes
+
+When a Task changes `package.json`, run `pnpm install` and commit the matching `pnpm-lock.yaml`. Verify the repository with `pnpm install --frozen-lockfile`; do not use `--no-frozen-lockfile` to conceal a stale lockfile.
+
+When a Task changes NuGet packages, run `dotnet restore` before build and test. Subsequent verification may use `--no-restore` only after restore succeeds.
+
+Audit Tasks that recommend dependency changes must include these requirements in the resulting issue.
+
 ## Timeouts and retries
 
 Every network, AI, build, and test Task defines:

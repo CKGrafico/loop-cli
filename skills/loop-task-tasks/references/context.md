@@ -2,7 +2,7 @@
 
 ## Overview
 
-The iteration context is a key-value map (`Record<string, unknown>`) that carries data between Tasks within a single iteration. Created fresh each iteration, extended by Task stdout, discarded when the iteration completes.
+The iteration context is a key-value map (`Record<string, unknown>`) that carries data between Tasks within a single iteration. Created fresh each iteration, extended by Task stdout and stderr, discarded when the iteration completes.
 
 ## 1. Creation
 
@@ -34,7 +34,7 @@ When stdout is **not** captured, it is streamed directly to the log file. No con
 - Captured via a transform stream that accumulates bytes.
 - Capped at **1 MB** (`MAX_CONTEXT_STDOUT_BYTES = 1048576`).
 - If exceeded, truncated. A warning is written to the log, but the captured portion is still parsed.
-- Stderr is **never** captured for context. Written to the log file only.
+- Stderr is captured with stdout for the automatic `output` value.
 
 ## 4. Parsing Rules
 
@@ -102,6 +102,18 @@ When stdout is valid JSON (an object), its keys are merged as described in secti
 When stdout is non-JSON or empty, `{{output}}` contains stdout plus stderr. It includes error messages, compiler output, test failures, and other diagnostic text the Task wrote to stderr.
 
 AI fix tasks that read `{{output}}` automatically see what went wrong. No custom JSON wrapper is needed to surface error text into context.
+
+### Batch output
+
+When a Task needs to pass a collection to its immediate successor, emit a JSON array and use `{{output}}` in that successor. JSON arrays do not create named context keys, so `output` preserves the raw array.
+
+```sh
+reports=$(gh issue list --label audit:report --state open --json number,body)
+test "$reports" != "[]" || exit 75
+printf '%s\n' "$reports"
+```
+
+Use named JSON objects for stable values required by several later Tasks, such as `number`, `title`, and `body`.
 
 ## 7. Interpolation
 
