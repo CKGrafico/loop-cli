@@ -1,4 +1,3 @@
-export { Callout } from './callout'
-export { CodeBlock } from './code-block'
-export { Steps } from './steps'
-export { Tabs } from './tabs'
+// Callout, Steps and Tabs now come from fumadocs-ui and are registered globally in
+// mdx-components.tsx. Only the code block stays bespoke.
+export { CodeBlock } from './code-block';

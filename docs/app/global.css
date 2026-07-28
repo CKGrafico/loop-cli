@@ -15,16 +15,128 @@
  * var(--platform-token) and therefore flips correctly between light and dark.
  */
 @import "tailwindcss";
-@import "fumadocs-ui/css/neutral.css";
+/* The Fumadocs preset only. The neutral preset used to be imported alongside it
+   and hardcoded a grey chrome palette that fought the Platform tokens below. */
 @import "fumadocs-ui/css/preset.css";
 
 @import "@plainconceptsplatform/ui-theme/theme.css";
 @import "@plainconceptsplatform/ui-theme/base.css";
 
+/* Radix/shadcn overlay animations, as Foundations ships them. */
+@import "tw-animate-css";
+
 /* Let Tailwind scan Fumadocs UI so its classes are generated. */
 @source "../node_modules/fumadocs-ui/dist/**/*.js";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Backfill from Foundations' theme.css ─────────────────────────────────
+   Foundations ships theme 0.2.0, but npm still only serves
+   @plainconceptsplatform/ui-theme@0.1.0, which predates the sidebar and chart
+   token groups, the elevation neutralization, and the reduced-motion guard.
+   This block mirrors exactly what 0.2.0 adds, so this site matches Foundations
+   today.
+
+   DELETE THIS WHOLE BLOCK and bump the dependency once 0.2.0 is published. */
+:root {
+  --sidebar: var(--pc-neutral-100);
+  --sidebar-foreground: var(--pc-neutral-900);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--pc-neutral-200);
+  --sidebar-ring: var(--ring);
+
+  /* Categorical data-viz ramp; every entry clears 3:1 against --background. */
+  --chart-1: var(--pc-blue-500);
+  --chart-2: var(--pc-warning-700);
+  --chart-3: var(--pc-success-700);
+  --chart-4: var(--pc-error-500);
+  --chart-5: var(--pc-info-700);
+}
+
+.dark {
+  --sidebar: #17181b;
+  --sidebar-foreground: #fafafc;
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: #2a2c33;
+  --sidebar-ring: var(--ring);
+
+  /* On near-black the 500 steps are the legible ones; brand blue lifts to 400. */
+  --chart-1: var(--pc-blue-400);
+  --chart-2: var(--pc-warning-500);
+  --chart-3: var(--pc-success-500);
+  --chart-4: var(--pc-error-500);
+  --chart-5: var(--pc-info-500);
+}
+
+/* The Platform design has no shadows: elevation is a border plus a surface.
+   Overriding the scale means shadow-* utilities still compile but paint nothing,
+   so vendored component source needs no edits. The value is `0 0 #0000` rather
+   than `none` because Tailwind composes ring into the same box-shadow list, and
+   `none` inside a comma-separated list would drop the focus ring with it. */
+@theme {
+  --shadow-2xs: 0 0 #0000;
+  --shadow-xs: 0 0 #0000;
+  --shadow-sm: 0 0 #0000;
+  --shadow-md: 0 0 #0000;
+  --shadow-lg: 0 0 #0000;
+  --shadow-xl: 0 0 #0000;
+  --shadow-2xl: 0 0 #0000;
+
+  --inset-shadow-2xs: 0 0 #0000;
+  --inset-shadow-xs: 0 0 #0000;
+  --inset-shadow-sm: 0 0 #0000;
+
+  --drop-shadow-xs: 0 0 #0000;
+  --drop-shadow-sm: 0 0 #0000;
+  --drop-shadow-md: 0 0 #0000;
+  --drop-shadow-lg: 0 0 #0000;
+  --drop-shadow-xl: 0 0 #0000;
+  --drop-shadow-2xl: 0 0 #0000;
+
+  --text-shadow-2xs: 0 0 #0000;
+  --text-shadow-xs: 0 0 #0000;
+  --text-shadow-sm: 0 0 #0000;
+  --text-shadow-md: 0 0 #0000;
+  --text-shadow-lg: 0 0 #0000;
+}
+
+/* Expose the backfilled groups as utilities, as 0.2.0 does. */
+@theme inline {
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}
+
+/* DESIGN.md requires honouring this; 0.2.0 enforces it in base.css. Kept to a
+   1ms duration so transitionend still fires and JS waiting on it does not stall. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* ── End backfill ───────────────────────────────────────────────────────── */
 
 /* ── Product accent ───────────────────────────────────────────────────────
    Amber replaces Platform blue as --primary. Light mode uses a darkened amber:
@@ -104,9 +216,12 @@
     Menlo, Consolas, "Liberation Mono", monospace;
 }
 
-/* ── Fumadocs chrome, mapped onto the Platform tokens ─────────────────── */
-:root,
-.dark {
+/* ── Fumadocs chrome, mapped onto the Platform tokens ─────────────────────
+   Fumadocs styles its own chrome (navbar, sidebar, TOC, search, code blocks)
+   from a --color-fd-* namespace, independent of the shadcn tokens. Declared with
+   @theme inline rather than on :root so Tailwind knows them as theme entries and
+   each utility emits var(--platform-token), which is what Foundations does. */
+@theme inline {
   --color-fd-background: var(--background);
   --color-fd-foreground: var(--foreground);
   --color-fd-muted: var(--muted);
@@ -125,10 +240,10 @@
   --color-fd-ring: var(--ring);
 }
 
-/* Sidebar sits one surface below the page, as in the Platform docs. */
+/* The sidebar sits one surface below the page, now using the real sidebar token
+   rather than a product alias. */
 #nd-sidebar {
-  --color-fd-muted: var(--muted);
-  --color-fd-secondary: var(--surface-raised);
+  --color-fd-secondary: var(--sidebar);
 }
 
 body {
@@ -185,26 +300,7 @@ figure.shiki pre {
   border-radius: 0;
 }
 
-/* ── Landing page animation helpers ── */
-
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-up {
-  animation: fade-up 0.6s ease-out both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-fade-up,
-  .animate-pulse {
-    animation: none;
-  }
-}
+/* No landing-page reveal animation. Per DESIGN.md's motion contract, motion
+   follows a state change: no scroll-triggered fades, no parallax. The reveal
+   keyframes and the Reveal component they backed were removed with the landing
+   rewrite. Reduced motion is handled globally in the backfill block above. */

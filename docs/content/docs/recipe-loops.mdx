@@ -3,8 +3,6 @@ title: Recipe Loops
 description: Version-control your loops as YAML files in .loops/recipes/. Auto-discovered, hot-reloaded, and team-shareable.
 ---
 
-import { Callout } from '@/components/docs'
-
 Recipe Loops let you define loops and their task chains as YAML files inside your repository. Drop a `.yaml` file into `.loops/recipes/` and loop-task auto-discovers it, creates the loop with its chained tasks, and watches the file for changes. Recipes are version-controlled alongside your code, so your team shares the same loop definitions without manual `loop-task new` commands or exports.
 
 <Callout type="info" title="No daemon restart needed">

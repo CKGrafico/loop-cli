@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist_Mono, Outfit } from 'next/font/google'
 import { RootProvider } from 'fumadocs-ui/provider'
+import { siteDescription, siteName, siteUrl } from '@/lib/site'
 import './global.css'
 
 /* Outfit is the Platform Foundations typeface; it feeds --font-sans, which the
@@ -16,10 +17,26 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://plainconceptsplatform.github.io/loop-task'),
-  title: 'loop-task: Run anything on a cadence',
-  description:
-    'A command-first terminal application for running tasks on a cadence. Manage loops, tasks, and projects with keyboard-only navigation.',
+  metadataBase: new URL(siteUrl),
+  // A template, so every docs page gets "Page · loop-task" without repeating itself.
+  title: {
+    default: `${siteName}: run anything on a cadence`,
+    template: `%s · ${siteName}`,
+  },
+  description: siteDescription,
+  applicationName: siteName,
+  openGraph: {
+    type: 'website',
+    siteName,
+    title: `${siteName}: run anything on a cadence`,
+    description: siteDescription,
+    url: siteUrl,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${siteName}: run anything on a cadence`,
+    description: siteDescription,
+  },
 }
 
 export default function RootLayout({
