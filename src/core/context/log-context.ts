@@ -3,6 +3,10 @@ export function formatContextLog(context: Record<string, unknown>): string {
 
   for (const [key, value] of Object.entries(context)) {
     if (value === undefined || value === null) continue;
+    if (key === "output" && context.opencode && typeof context.opencode === "object") {
+      const oc = context.opencode as Record<string, unknown>;
+      if (typeof oc.text === "string" && oc.text.length > 0) continue;
+    }
 
     if (typeof value === "string") {
       const truncated = value.length > 200 ? value.slice(0, 200) + "..." : value;
@@ -16,8 +20,8 @@ export function formatContextLog(context: Record<string, unknown>): string {
     }
   }
 
-  if (lines.length === 0) return "{}\n";
-  return `{\n${lines.join("\n")}\n}\n`;
+  if (lines.length === 0) return "";
+  return `=== CONTEXT ===\n{\n${lines.join("\n")}\n}\n=== END CONTEXT ===\n`;
 }
 
 function truncateOneline(text: string): string {
