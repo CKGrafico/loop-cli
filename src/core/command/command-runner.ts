@@ -296,22 +296,18 @@ export async function executeCommand(
     ? new StdoutCaptureTransform(MAX_CONTEXT_STDOUT_BYTES)
     : null;
 
-  const isOpencodeJson = detectedIntegrationId === "opencode" && effectiveArgs.includes("--format") && effectiveArgs.includes("json");
-
-  const pipeConfigs = [
-    { stream: child.stdout, capture: stdoutCapture, suppressLog: isOpencodeJson },
-    { stream: child.stderr, capture: stderrCapture, suppressLog: false },
-  ] as const;
-
-  for (const { stream, capture, suppressLog } of pipeConfigs) {
-    if (capture && suppressLog) {
-      stream!.pipe(capture);
-    } else if (capture) {
-      stream!.pipe(capture).pipe(logStream, { end: false });
-    } else {
-      stream!.pipe(logStream, { end: false });
-    }
+  if (stdoutCapture) {
+    child.stdout!.pipe(stdoutCapture).pipe(logStream, { end: false });
+  } else {
+    child.stdout!.pipe(logStream, { end: false });
   }
+  if (stderrCapture) {
+    child.stderr!.pipe(stderrCapture).pipe(logStream, { end: false });
+  } else {
+    child.stderr!.pipe(logStream, { end: false });
+  }
+
+  const isOpencodeJson = detectedIntegrationId === "opencode" && effectiveArgs.includes("--format") && effectiveArgs.includes("json");
 
   try {
     const result = await child;
