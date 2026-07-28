@@ -1,6 +1,6 @@
 {
   "name": "@plainconceptsplatform/loop-task",
-  "version": "2.7.2",
+  "version": "2.7.3",
   "description": "Loop engineering toolkit. Run any command on a cadence, in the background, managed from a terminal board. Schedule tests, builds, syncs, or agent prompts.",
   "type": "module",
   "bin": {
@@ -16,7 +16,7 @@
     "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json && node -e \"require('fs').copyFileSync('src/entry.js','dist/entry.js'); require('fs').copyFileSync('src/esm-loader.js','dist/esm-loader.js')\"",
     "prepublishOnly": "npm run build",
     "start": "node dist/entry.js",
-    "dev": "&& tsx src/cli.ts",
+    "dev": "tsx src/cli.ts",
     "dev:watch": "tsx --watch src/cli.ts",
     "board": "node dist/entry.js",
     "test": "vitest run --exclude '**/background-cli.test.ts'",

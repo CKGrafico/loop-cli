@@ -110,10 +110,6 @@ export function App(props: { onQuit: () => void }): React.ReactNode {
   const handleConfirmYes = useCallback(() => { if (s.confirmState) { s.confirmState.onConfirm(); s.setConfirmState(null); } }, [s.confirmState]);
   const handleConfirmCancel = useCallback(() => { s.setConfirmState(null); }, []);
 
-  if (daemonStatus === "starting") {
-    return React.createElement(Splash);
-  }
-
   const cancelCreate = () => { s.setEditTarget(null); s.setCloneMode(false); s.setPendingTaskSelection(null); pop(); };
   const cancelTask = () => { s.setEditTask(null); pop(); };
   const cancelProject = () => { s.setEditProject(null); pop(); };
@@ -136,6 +132,10 @@ export function App(props: { onQuit: () => void }): React.ReactNode {
     () => ({ activeTab: s.activeTab, selectedLoop: s.selected, selectedTask: s.selectedTask, selectedProject: s.selectedProjectEntity }),
     [s.activeTab, s.selected, s.selectedTask]
   );
+
+  if (daemonStatus === "starting") {
+    return React.createElement(Splash);
+  }
 
   return (
     <Box flexDirection="column" width="100%" height={process.stdout.rows || 24} backgroundColor={theme.bg.base}>
