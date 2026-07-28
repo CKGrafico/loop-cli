@@ -27,6 +27,7 @@ import { useOverlayStack } from "../features/overlays/useOverlayStack.js";
 import { useGlobalShortcuts } from "../features/commands/useGlobalShortcuts.js";
 import { FormRouter } from "../features/forms/FormRouter.js";
 import { OverlayStack } from "../features/overlays/OverlayStack.js";
+import { Splash } from "./Splash.js";
 import { MOUSE_TRACKING_ENABLE } from "../shared/config/constants.js";
 
 function viewKey(view: View, editTarget: LoopMeta | null, editTask: TaskDefinition | null): string {
@@ -49,6 +50,10 @@ export function App(props: { onQuit: () => void }): React.ReactNode {
   const exportService = useInject<ExportService>(TYPES.ExportService);
   const { loops, daemonStatus, refresh } = useLoopPolling();
   const daemonSettings = useDaemonSettings();
+
+  if (daemonStatus === "starting") {
+    return React.createElement(Splash);
+  }
   const { view, push, pop } = useRouter("board");
   const { toasts, push: pushToast } = useToasts();
   const breakpoint = useBreakpoint();

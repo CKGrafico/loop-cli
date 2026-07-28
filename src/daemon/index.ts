@@ -69,22 +69,26 @@ async function main(): Promise<void> {
   const resolvedHttpPort = Number.isNaN(httpPort) ? undefined : httpPort;
   let currentHttpHost = settingsManager.get().httpApiHost;
 
+  const startupTasks: Promise<void>[] = [];
+
   if (settingsManager.get().httpApiEnabled) {
-    try {
-      await httpServer.listen(resolvedHttpPort, currentHttpHost);
-    } catch (err) {
-      daemonLog(`HTTP API server failed to start: ${String(err)}`);
-    }
+    startupTasks.push(
+      httpServer.listen(resolvedHttpPort, currentHttpHost).catch((err) => {
+        daemonLog(`HTTP API server failed to start: ${String(err)}`);
+      }),
+    );
   }
 
   mcpServer.setHost(currentHttpHost);
   if (mcpEnabled) {
-    try {
-      await mcpServer.start();
-    } catch (err) {
-      daemonLog(`MCP server failed to start: ${String(err)}`);
-    }
+    startupTasks.push(
+      mcpServer.start().catch((err) => {
+        daemonLog(`MCP server failed to start: ${String(err)}`);
+      }),
+    );
   }
+
+  await Promise.all(startupTasks);
 
   settingsManager.onChange((settings) => {
     const newHost = settings.httpApiHost;

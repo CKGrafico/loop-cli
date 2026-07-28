@@ -4,8 +4,16 @@ import { ensureDaemon, getSocket } from "../daemon/spawner/index.js";
 import { t } from "../shared/i18n/index.js";
 import { IPC_TIMEOUT_MS } from "../shared/config/constants.js";
 
-export async function sendRequest(request: IpcRequest): Promise<IpcResponse> {
+let daemonEnsured = false;
+
+export async function ensureDaemonReady(): Promise<void> {
+  if (daemonEnsured) return;
   ensureDaemon();
+  daemonEnsured = true;
+}
+
+export async function sendRequest(request: IpcRequest): Promise<IpcResponse> {
+  await ensureDaemonReady();
   const socketPath = getSocket();
 
   return new Promise((resolve, reject) => {
