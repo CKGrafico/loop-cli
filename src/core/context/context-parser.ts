@@ -62,14 +62,50 @@ export function mergeCommandOutput(
   context: Record<string, unknown>,
   stdout: string,
   stderr: string,
+  opencode?: unknown,
 ): void {
   const parsed = parseStdout(stdout);
   if (parsed !== null) {
     Object.assign(context, parsed);
   }
 
+  // Merge structured opencode context under the "opencode" namespace
+  if (opencode && typeof opencode === "object") {
+    context.opencode = opencode;
+  }
+
   const output = [stdout, stderr].filter(Boolean).join("\n").trim();
   if (output.length > 0) {
     context.output = output;
   }
+}
+
+/**
+ * Resolve a dotted key path (e.g., "opencode.tokens.input") from a context object.
+ * When the resolved value is an object (not array, not null), render as indented JSON.
+ * Returns the string representation for interpolation into command args.
+ */
+export function resolveContextValue(
+  context: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  const parts = key.split(".");
+  let current: unknown = context;
+
+  for (const part of parts) {
+    if (current && typeof current === "object" && !Array.isArray(current)) {
+      current = (current as Record<string, unknown>)[part];
+    } else {
+      return undefined;
+    }
+  }
+
+  if (current === undefined || current === null) return undefined;
+
+  // Objects and arrays render as indented JSON
+  if (typeof current === "object") {
+    return JSON.stringify(current, null, 2);
+  }
+
+  return String(current);
 }

@@ -48,6 +48,76 @@ export class OpenCodeTelemetryIntegration implements AgentTelemetryIntegration {
     return { command: invocation.command, args: [...invocation.args], env };
   }
 
+  parseUsage(result: CommandResult): AgentUsage | undefined {
+    if (result.exitCode !== 0 || !result.stdout) return undefined;
+
+    try {
+      // With --format json, opencode emits JSONL. The last step_finish event
+      // has token/cost info. Try parsing as JSONL first.
+      const lines = result.stdout.trim().split("\n");
+      const jsonlLines: unknown[] = [];
+      let allJson = true;
+      for (const line of lines) {
+        try { jsonlLines.push(JSON.parse(line)); } catch { allJson = false; break; }
+      }
+
+      if (allJson && jsonlLines.length > 0) {
+        // Find the last step_finish event
+        let accumulated: AgentUsage = {};
+        for (const evt of jsonlLines) {
+          if (typeof evt === "object" && evt !== null && (evt as Record<string, unknown>).type === "step_finish") {
+            const part = (evt as Record<string, unknown>).part as Record<string, unknown> | undefined;
+            const tokens = part?.tokens as Record<string, unknown> | undefined;
+            if (tokens) {
+              accumulated.inputTokens = (accumulated.inputTokens ?? 0) + (typeof tokens.input === "number" ? tokens.input : 0);
+              accumulated.outputTokens = (accumulated.outputTokens ?? 0) + (typeof tokens.output === "number" ? tokens.output : 0);
+              const cache = tokens.cache as Record<string, unknown> | undefined;
+              if (cache) {
+                accumulated.cacheReadTokens = (accumulated.cacheReadTokens ?? 0) + (typeof cache.read === "number" ? cache.read : 0);
+                accumulated.cacheWriteTokens = (accumulated.cacheWriteTokens ?? 0) + (typeof cache.write === "number" ? cache.write : 0);
+              }
+            }
+            if (typeof part?.cost === "number") {
+              accumulated.costUsd = (accumulated.costUsd ?? 0) + part.cost;
+            }
+          }
+        }
+        if (Object.keys(accumulated).length > 0) {
+          accumulated.integration = "opencode";
+          return accumulated;
+        }
+      }
+
+      // Fallback: try parsing the last line as JSON (legacy --format json without JSONL)
+      const lastLine = lines[lines.length - 1];
+      if (!lastLine) return undefined;
+
+      const parsed = JSON.parse(lastLine);
+      if (typeof parsed !== "object" || parsed === null) return undefined;
+
+      const usage: AgentUsage = {};
+      if (typeof parsed.inputTokens === "number") usage.inputTokens = parsed.inputTokens;
+      if (typeof parsed.input_tokens === "number") usage.inputTokens = parsed.input_tokens;
+      if (typeof parsed.outputTokens === "number") usage.outputTokens = parsed.outputTokens;
+      if (typeof parsed.output_tokens === "number") usage.outputTokens = parsed.output_tokens;
+      if (typeof parsed.cacheReadTokens === "number") usage.cacheReadTokens = parsed.cacheReadTokens;
+      if (typeof parsed.cache_read_tokens === "number") usage.cacheReadTokens = parsed.cache_read_tokens;
+      if (typeof parsed.cacheWriteTokens === "number") usage.cacheWriteTokens = parsed.cacheWriteTokens;
+      if (typeof parsed.cache_write_tokens === "number") usage.cacheWriteTokens = parsed.cache_write_tokens;
+      if (typeof parsed.cost === "number") usage.costUsd = parsed.cost;
+      if (typeof parsed.cost_usd === "number") usage.costUsd = parsed.cost_usd;
+      if (typeof parsed.model === "string") usage.model = parsed.model;
+      if (typeof parsed.provider === "string") usage.provider = parsed.provider;
+      if (typeof parsed.sessionId === "string") usage.sessionId = parsed.sessionId;
+
+      if (Object.keys(usage).length === 0) return undefined;
+      usage.integration = "opencode";
+      return usage;
+    } catch {
+      return undefined;
+    }
+  }
+
   async ensureServe(cwd: string, env: Record<string, string>): Promise<ServeInfo | void> {
     // Already running and healthy
     if (this.serveInfo && this.isServeAlive()) {

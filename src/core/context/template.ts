@@ -9,10 +9,32 @@ function shellEscape(value: string): string {
   return "'" + value.replace(/'/g, "'\\''") + "'";
 }
 
+function resolveNestedValue(context: Record<string, unknown>, key: string): unknown {
+  const parts = key.split(".");
+  let current: unknown = context;
+
+  for (const part of parts) {
+    if (current && typeof current === "object" && !Array.isArray(current)) {
+      current = (current as Record<string, unknown>)[part];
+    } else {
+      return undefined;
+    }
+  }
+
+  return current;
+}
+
 export function interpolate(input: string, context: Record<string, unknown>): string {
-  return input.replace(/{{(\w+)}}/g, (_, key: string) => {
-    const raw = context[key];
+  // Support nested keys like {{opencode.tokens.input}} and {{opencode.tokens}}
+  return input.replace(/{{([\w.]+)}}/g, (_, key: string) => {
+    const raw = resolveNestedValue(context, key);
     if (raw === undefined || raw === null) return "";
+
+    // Objects and arrays render as indented JSON
+    if (typeof raw === "object") {
+      return shellEscape(JSON.stringify(raw, null, 2));
+    }
+
     return shellEscape(String(raw));
   });
 }

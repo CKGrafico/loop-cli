@@ -190,7 +190,10 @@ export function executeChain(options: ChainExecuteOptions): Promise<ChainExecute
         }
 
         if (shouldCaptureStdout && (stepStdout || stepStderr)) {
-          mergeCommandOutput(chainContext, stepStdout, stepStderr);
+          const opencodeCtx = stepResults
+            .filter((r): r is PromiseFulfilledResult<ExecutionResult & { opencode?: unknown }> => r.status === "fulfilled")
+            .find((r) => (r.value as unknown as Record<string, unknown>).opencode)?.value?.opencode;
+          mergeCommandOutput(chainContext, stepStdout, stepStderr, opencodeCtx);
         }
 
         const stepFailure = stepResults.some(
