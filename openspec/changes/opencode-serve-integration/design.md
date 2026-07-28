@@ -137,3 +137,27 @@ all OTEL env injected per-task as before.
 
 - Does `opencode run --attach` forward `TRACEPARENT` from its env to the serve as a W3C HTTP header? Needs runtime verification.
 - Should the serve port be configurable via `loop-task` settings in a future iteration? Likely yes, but not in scope now.
+
+## Future: Session Continuity Across Tasks
+
+With serve, sessions persist in the server process between tasks. Recipe authors can chain sessions explicitly using `--session` with context interpolation:
+
+```yaml
+- id: implement
+  command: opencode
+  commandArgs: [run, --attach, http://localhost:4096, --format, json, --agent, fullstack, "implement #158"]
+  # opencode run --format json emits {"sessionId":"abc-123",...} as last stdout line
+  # loop-task parses it into context as sessionId
+  onSuccessTaskId: fix-tests
+
+- id: fix-tests
+  command: opencode
+  commandArgs: [run, --attach, http://localhost:4096, --session, "{{sessionId}}", --agent, fullstack, "fix the failing tests"]
+  # serve resumes session abc-123 — agent remembers what it just implemented
+```
+
+Key points:
+- `--format json` makes opencode emit structured stdout that loop-task parses into context
+- `--session {{sessionId}}` is explicit and deterministic — safer than `--continue` which resumes "the last session" and could collide if multiple loops share the serve
+- This is a recipe-level pattern, not a serve-lifecycle feature. The serve makes it possible; the recipe author opts in.
+- Not implemented in this change — documented as a future capability.
