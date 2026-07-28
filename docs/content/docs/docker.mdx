@@ -14,7 +14,7 @@ Run the board interactively with a single command:
 ```bash
 docker run -it --rm \
   -v loop-task-data:/root/.loop-cli \
-  node:20-slim npx loop-task
+  node:20-slim npx @plainconceptsplatform/loop-task
 ```
 
 | Flag | Purpose |
@@ -30,9 +30,9 @@ Run the daemon in the background, then create loops via `docker exec`:
 ```bash
 docker run -d --name loop-daemon \
   -v loop-task-data:/root/.loop-cli \
-  node:20-slim npx loop-task start
+  node:20-slim npx @plainconceptsplatform/loop-task start
 
-docker exec loop-daemon npx loop-task new 30m -- npm test
+docker exec loop-daemon npx @plainconceptsplatform/loop-task new 30m -- npm test
 ```
 
 The first command starts the daemon in detached mode (`-d`). The second sends a `new` command directly inside the running container - the daemon picks it up immediately.
@@ -46,7 +46,7 @@ docker run -d --name loop-daemon \
   -v loop-task-data:/root/.loop-cli \
   -p 8845:8845 \
   -e LOOP_CLI_HTTP_PORT=8845 \
-  node:20-slim npx loop-task start
+  node:20-slim npx @plainconceptsplatform/loop-task start
 ```
 
 Then open `http://localhost:8845/api/docs` for the Swagger UI. Every endpoint is available from the host as if loop-task were running natively.
@@ -57,7 +57,7 @@ A minimal Dockerfile for production or repeatable deployments:
 
 ```dockerfile
 FROM node:20-slim
-RUN npm install -g loop-task
+RUN npm install -g @plainconceptsplatform/loop-task
 VOLUME /root/.loop-cli
 EXPOSE 8845
 CMD ["loop-task", "start"]

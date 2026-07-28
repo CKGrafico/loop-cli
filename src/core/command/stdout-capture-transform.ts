@@ -54,21 +54,23 @@ export class StdoutCaptureTransform extends Transform {
       try {
         const parsed = JSON.parse(trimmed);
         if (typeof parsed === "object" && parsed !== null && "type" in parsed) {
-          const type = parsed.type as string;
-          if (type === "text" && parsed.part?.text) {
+          const t = parsed.type as string;
+          if (t === "text" && parsed.part?.text) {
             this.push(parsed.part.text + "\n");
             pushed = true;
-          } else if (type === "tool_use" && parsed.part?.state?.title) {
+          } else if (t === "tool_use" && parsed.part?.state?.title) {
             this.push(`→ ${parsed.part.state.title} (${parsed.part.tool})\n`);
             pushed = true;
-          } else if (type === "step_finish" && parsed.part?.reason === "stop") {
-            const t = parsed.part.tokens;
-            if (t) {
-              this.push(`[tokens: ${t.input} in / ${t.output} out]\n`);
+          } else if (t === "step_finish" && parsed.part?.reason === "stop") {
+            const tok = parsed.part.tokens;
+            if (tok) {
+              this.push(`[tokens: ${tok.input} in / ${tok.output} out]\n`);
             }
             pushed = true;
-          } else if (type === "error" && parsed.error?.data?.message) {
+          } else if (t === "error" && parsed.error?.data?.message) {
             this.push(`[error: ${parsed.error.data.message}]\n`);
+            pushed = true;
+          } else {
             pushed = true;
           }
         }

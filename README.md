@@ -9,10 +9,10 @@
 
 **[plainconceptsplatform.github.io/loop-task](https://plainconceptsplatform.github.io/loop-task)**
 
-[![npm version](https://img.shields.io/npm/v/loop-task?style=flat-square&color=black)](https://www.npmjs.com/package/loop-task)
-[![npm downloads](https://img.shields.io/npm/dm/loop-task?style=flat-square&color=black)](https://www.npmjs.com/package/loop-task)
-[![license](https://img.shields.io/npm/l/loop-task?style=flat-square&color=black)](./LICENSE)
-[![node](https://img.shields.io/node/v/loop-task?style=flat-square&color=black)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/@plainconceptsplatform/loop-task?style=flat-square&color=black)](https://www.npmjs.com/package/@plainconceptsplatform/loop-task)
+[![npm downloads](https://img.shields.io/npm/dm/@plainconceptsplatform/loop-task?style=flat-square&color=black)](https://www.npmjs.com/package/@plainconceptsplatform/loop-task)
+[![license](https://img.shields.io/npm/l/@plainconceptsplatform/loop-task?style=flat-square&color=black)](./LICENSE)
+[![node](https://img.shields.io/node/v/@plainconceptsplatform/loop-task?style=flat-square&color=black)](https://nodejs.org)
 
 </div>
 
@@ -47,7 +47,7 @@ No cron files to maintain and no daemon to babysit: loops persist across reboots
 ## Quick start
 
 ```bash
-npm install -g loop-task
+npm install -g @plainconceptsplatform/loop-task
 loop-task                          # open the board
 loop-task start                    # start the daemon, restore persisted loops
 loop-task new 30m -- npm test      # create a background loop
@@ -60,8 +60,8 @@ loop-task api                      # show HTTP API endpoints (Swagger, OpenAPI)
 Or run it directly:
 
 ```bash
-npx loop-task
-npx loop-task new 30m -- npm test
+npx @plainconceptsplatform/loop-task
+npx @plainconceptsplatform/loop-task new 30m -- npm test
 ```
 
 ## Agent skills
@@ -81,7 +81,7 @@ not intended for installation by Loop Task users.
 - **Node.js >= 20** - required for all commands including the board
 
 ```bash
-npm install -g loop-task
+npm install -g @plainconceptsplatform/loop-task
 ```
 
 All commands (`start`, `new`, `run`, `board`) work with Node alone.

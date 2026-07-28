@@ -4,20 +4,23 @@ import { useState } from 'react';
 import { CopyButton } from './copy-button';
 
 const MANAGERS = [
-  { id: 'npm', cmd: 'npm install -g loop-task' },
-  { id: 'pnpm', cmd: 'pnpm add -g loop-task' },
-  { id: 'yarn', cmd: 'yarn global add loop-task' },
-  { id: 'bun', cmd: 'bun add -g loop-task' },
+  { id: 'npm', cmd: 'npm install -g @plainconceptsplatform/loop-task' },
+  { id: 'pnpm', cmd: 'pnpm add -g @plainconceptsplatform/loop-task' },
+  { id: 'yarn', cmd: 'yarn global add @plainconceptsplatform/loop-task' },
+  { id: 'bun', cmd: 'bun add -g @plainconceptsplatform/loop-task' },
 ] as const;
+
+/* max-w-xl, not md: the scoped package name pushes the longest command
+   ("yarn global add @plainconceptsplatform/loop-task") to ~48 characters, which
+   `truncate` would otherwise clip on the one string users need to copy. */
+const SHELL = 'w-full max-w-xl overflow-hidden rounded-xl border border-border-dim bg-input text-left';
 
 export function InstallTabs({ className }: { className?: string }) {
   const [active, setActive] = useState<(typeof MANAGERS)[number]['id']>('npm');
   const current = MANAGERS.find((m) => m.id === active)!;
 
   return (
-    <div
-      className={`w-full max-w-md overflow-hidden rounded-xl border border-border-dim bg-input text-left ${className ?? ''}`}
-    >
+    <div className={`${SHELL} ${className ?? ''}`}>
       {/* Tab bar */}
       <div className="flex items-center border-b border-border-dim px-2">
         {MANAGERS.map((m) => (
