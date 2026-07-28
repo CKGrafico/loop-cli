@@ -197,3 +197,26 @@ Be careful: the daemon also writes to these files. Avoid editing while the daemo
 ### How does scheduling work?
 
 Execution times are distributed across the interval using **spread scheduling** - the daemon computes `hash(loopId) % interval` to offset each loop within its window. This prevents the *thundering herd* problem where hundreds of loops scheduled every hour all fire at minute 0. See the [Architecture](/docs/architecture) docs for details.
+
+## Agent serve not starting
+
+When the daemon starts, it attempts to start an `opencode serve` sidecar on port 4096. If this fails, agent tasks fall back to cold-start `opencode run` (slower but functional). Diagnose:
+
+1. **Check if opencode is installed:**
+   ```bash
+   opencode --version
+   ```
+
+2. **Check if port 4096 is in use:**
+   ```bash
+   curl http://localhost:4096/global/health
+   # If a different serve is already running, that's fine — the daemon reuses it
+   ```
+
+3. **Check daemon logs for serve errors:**
+   ```bash
+   # Look for "opencode-serve" or "agent-serve-manager" entries
+   grep -i "serve" ~/.loop-cli/daemon.log
+   ```
+
+4. **If serve crashes repeatedly:** The daemon will restart it automatically. If it keeps crashing, check opencode's own logs for errors. You can also stop the daemon, manually run `opencode serve --port 4096`, then restart the daemon — it will detect and reuse the running serve.

@@ -173,3 +173,73 @@ AI Task 2: "Implement {{refinedTitle}}. Specification: {{refinedBody}}"
 ```
 
 Context accumulates across the chain. Later AI Tasks see all earlier context keys. Use named JSON keys (not the `output` key) for values that must survive across AI Tasks.
+
+## OpenCode Serve Model
+
+When the daemon starts, it manages a persistent `opencode serve` sidecar process. Recipe tasks that invoke `opencode run` automatically connect to this warm serve instance via `--attach`, eliminating per-task cold-start time (30-90s saved per invocation).
+
+### What the serve model does automatically
+
+- **`--attach http://localhost:4096`** — injected into `opencode run` args when serve is alive
+- **`--dir <cwd>`** — injected so serve operates in the correct working directory
+- **`--format json`** — auto-injected so loop-task can parse structured output
+- **Static OTEL config** — lives in the serve process env (set once), not per-task
+- **`TRACEPARENT`** — still per-task, on the run client
+
+Recipes do NOT need to change. The detection and injection happen in the command-runner at the same point telemetry env is already injected.
+
+### context.opencode.* keys
+
+After an `opencode run` task completes, loop-task parses the JSONL stdout stream and makes structured data available in context:
+
+| Key | Example | Description |
+|-----|---------|-------------|
+| `{{opencode.session.id}}` | `ses_abc123` | Session ID for chaining with `--session` |
+| `{{opencode.tokens.input}}` | `671` | Input tokens (accumulated) |
+| `{{opencode.tokens.output}}` | `8` | Output tokens (accumulated) |
+| `{{opencode.tokens}}` | indented JSON | Full token object with cache breakdown |
+| `{{opencode.cost}}` | `0.042` | Total cost in USD (accumulated) |
+| `{{opencode.tools.count}}` | `3` | Number of tool calls |
+| `{{opencode.gitSnapshot}}` | `09dd05d...` | Git snapshot hash from final step |
+| `{{opencode.error}}` | indented JSON | Error info if an error occurred |
+| `{{opencode.text}}` | agent summary | Last text before final step_finish (Option B) |
+
+When a context value is an object, `{{opencode.tokens}}` renders as `JSON.stringify(value, null, 2)` — indented JSON suitable for PR comments.
+
+### Session chaining within a loop chain
+
+Sessions persist in the serve process between tasks. Chain them explicitly using `--session` with `{{opencode.session.id}}`:
+
+```yaml
+- id: implement
+  command: opencode
+  commandArgs: [run, --agent, fullstack, "implement #158"]
+  # --format json auto-injected, context.opencode.session.id available after
+
+- id: fix-tests
+  command: opencode
+  commandArgs: [run, --session, "{{opencode.session.id}}", --agent, fullstack, "fix the tests"]
+  # serve resumes session — agent remembers Task 1's context
+```
+
+Session chaining is within the same loop chain only. Context (including `opencode.*`) is discarded between iterations.
+
+### Including token info in PR comments
+
+```yaml
+- id: pr
+  command: sh
+  commandArgs:
+    - -c
+    - >
+      gh pr create --title "Resolve #{{number}}"
+      --body "Tokens: {{opencode.tokens}} Cost: ${{opencode.cost}}"
+```
+
+### Fallback behavior
+
+If the serve process is not running (crash, port in use, opencode not installed), loop-task falls back to the current `opencode run` model — no `--attach` injection, slower cold-start, but fully functional.
+
+### Claude Code
+
+Claude Code does not support the serve model (`claude -p` has no `--attach` equivalent). Claude Code tasks continue to use per-task env injection. When Claude Code adds serve-attach support, the same pattern will apply.

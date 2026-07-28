@@ -19,6 +19,8 @@ Two environment variables control the runtime behaviour of loop-task.
 | `LOOP_CLI_MCP_TRANSPORT` | `sse` | MCP transport: `sse` or `stdio` |
 | `LOOP_CLI_MCP_PORT` | `8846` | Port for MCP SSE transport |
 
+The agent serve sidecar (when enabled) listens on port `4096`. This is the `opencode serve` process managed by the daemon. See [OpenTelemetry](/docs/opentelemetry#agent-serve-lifecycle) for details on the serve lifecycle.
+
 `LOOP_CLI_HOME` overrides the default data-directory location. When unset, all
 state is stored under `~/.loop-cli`. `LOOP_CLI_HTTP_PORT` changes the port the
 HTTP API listens on. The MCP server variables control the Model Context Protocol
