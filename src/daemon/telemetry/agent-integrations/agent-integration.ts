@@ -52,10 +52,10 @@ export interface AgentTelemetryIntegration {
   isServeAlive?(): boolean;
 
   /**
-   * Inject serve-specific arguments (e.g., --attach) into the command args
+   * Inject serve-specific arguments (e.g., --attach, --dir) into the command args
    * when serve is alive. Returns the modified args array.
    */
-  prepareRunArgs?(args: string[]): string[];
+  prepareRunArgs?(args: string[], cwd?: string): string[];
 
   /**
    * Gracefully shut down the serve process.
