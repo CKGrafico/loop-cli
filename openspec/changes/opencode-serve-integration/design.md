@@ -152,12 +152,64 @@ With serve, sessions persist in the server process between tasks. Recipe authors
 
 - id: fix-tests
   command: opencode
-  commandArgs: [run, --attach, http://localhost:4096, --session, "{{sessionId}}", --agent, fullstack, "fix the failing tests"]
+  commandArgs: [run, --attach, http://localhost:4096, --session, "{{opencode.session.id}}", --agent, fullstack, "fix the failing tests"]
   # serve resumes session abc-123 — agent remembers what it just implemented
 ```
 
 Key points:
 - `--format json` makes opencode emit structured stdout that loop-task parses into context
-- `--session {{sessionId}}` is explicit and deterministic — safer than `--continue` which resumes "the last session" and could collide if multiple loops share the serve
+- `--session {{opencode.session.id}}` is explicit and deterministic — safer than `--continue` which resumes "the last session" and could collide if multiple loops share the serve
 - This is a recipe-level pattern, not a serve-lifecycle feature. The serve makes it possible; the recipe author opts in.
-- Not implemented in this change — documented as a future capability.
+- Session chaining is within the same loop chain only (context is discarded between iterations).
+
+## OpenCode JSONL Stream Parsing (context.opencode.*)
+
+When the detected agent integration is `opencode`, loop-task auto-injects `--format json` into the run args. After the command completes, the JSONL stdout stream is parsed into a structured context object:
+
+### What gets extracted
+
+| Event | Fields | Context Path |
+|---|---|---|
+| `step_start` | `sessionID`, `part.messageID`, `part.snapshot` | `opencode.session.id`, `opencode.messageId`, `opencode.gitSnapshot` |
+| `tool_use` | `part.tool`, count | `opencode.tools.count`, `opencode.tools.names[]` |
+| `text` (last before step_finish with reason=stop) | `part.text` | `opencode.text` |
+| `step_finish` (accumulated) | `part.tokens.*`, `part.cost` | `opencode.tokens.*`, `opencode.cost` |
+| `error` | `error.name`, `error.data.message` | `opencode.error.name`, `opencode.error.message` |
+
+### Context object shape
+
+```
+context.opencode = {
+  session: { id, messageId },
+  tokens: { input, output, reasoning, cache: { read, write } },
+  cost,  // accumulated across all steps
+  tools: { count, names },
+  gitSnapshot,
+  error, // null if no error
+  text   // last text before final step_finish; null if none
+}
+```
+
+### Text capture policy: Option B
+
+Only the last `text` event before `step_finish` with `reason: "stop"` is captured. This is the agent's final summary, not intermediate reasoning. Full text capture is a future opt-in via settings.
+
+### Interpolation behavior
+
+- Scalar values: `{{opencode.cost}}` → `0.042`
+- Nested scalar: `{{opencode.tokens.input}}` → `671`
+- Object values: `{{opencode.tokens}}` → `JSON.stringify(value, null, 2)` → indented JSON:
+  ```json
+  {
+    "input": 671,
+    "output": 8,
+    "reasoning": 0,
+    "cache": { "read": 21415, "write": 0 }
+  }
+  ```
+
+This enables rich PR comments with token usage, cost reporting, and structured error context.
+
+### Non-JSON stdout fallback
+
+If the first line of stdout is not valid JSON with a `type` field, the parser skips and stdout is treated as plain text (current behavior). Recipes that don't use `--format json` are unaffected.
