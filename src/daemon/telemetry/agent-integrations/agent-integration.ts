@@ -4,6 +4,7 @@ import type {
   ChildTelemetryContext,
   AgentUsage,
   CommandResult,
+  ServeInfo,
 } from "../telemetry-types.js";
 
 /**
@@ -36,4 +37,29 @@ export interface AgentTelemetryIntegration {
    * Must not force --format json when it would break output contract.
    */
   parseUsage?(result: CommandResult): AgentUsage | undefined;
+
+  /**
+   * Optionally start a persistent serve process for this agent.
+   * Called by AgentServeManager on daemon boot and on restart after crash.
+   * Returns ServeInfo if serve was started or is already running, void if not supported.
+   */
+  ensureServe?(cwd: string, env: Record<string, string>): Promise<ServeInfo | void>;
+
+  /**
+   * Check whether the serve process is alive and healthy.
+   * Returns true if serve is running and responding to health checks.
+   */
+  isServeAlive?(): boolean;
+
+  /**
+   * Inject serve-specific arguments (e.g., --attach) into the command args
+   * when serve is alive. Returns the modified args array.
+   */
+  prepareRunArgs?(args: string[]): string[];
+
+  /**
+   * Gracefully shut down the serve process.
+   * Called by AgentServeManager on daemon shutdown.
+   */
+  shutdownServe?(): Promise<void>;
 }
