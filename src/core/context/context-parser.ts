@@ -64,26 +64,32 @@ export function mergeCommandOutput(
   stderr: string,
   opencode?: unknown,
 ): void {
+  if (opencode && typeof opencode === "object") {
+    context.opencode = opencode;
+    const oc = opencode as Record<string, unknown>;
+    if (typeof oc.text === "string" && oc.text.length > 0) {
+      context.output = oc.text;
+    } else {
+      const trimmed = stdout.trim();
+      if (trimmed.length > 0) context.output = trimmed;
+    }
+    if (stderr.trim().length > 0) {
+      context.output = (context.output ? context.output + "\n" : "") + stderr.trim();
+    }
+    return;
+  }
+
   const parsed = parseStdout(stdout);
   if (parsed !== null) {
     Object.assign(context, parsed);
   }
 
-  if (opencode && typeof opencode === "object") {
-    const incoming = opencode as Record<string, unknown>;
-    const existing = context.opencode as Record<string, unknown> | undefined;
-
-    if (
-      existing &&
-      typeof existing === "object" &&
-      existing.session &&
-      incoming.session &&
-      (existing.session as Record<string, unknown>).id === (incoming.session as Record<string, unknown>).id
-    ) {
-      context.opencode = accumulateOpencodeContext(existing, incoming);
-    } else {
-      context.opencode = opencode;
-    }
+  const opencodeExisting = context.opencode as Record<string, unknown> | undefined;
+  const incoming = opencode as Record<string, unknown> | undefined;
+  if (incoming && typeof incoming === "object" && opencodeExisting && typeof opencodeExisting === "object" && opencodeExisting.session && incoming.session && (opencodeExisting.session as Record<string, unknown>).id === (incoming.session as Record<string, unknown>).id) {
+    context.opencode = accumulateOpencodeContext(opencodeExisting, incoming);
+  } else if (opencode && typeof opencode === "object") {
+    context.opencode = opencode;
   }
 
   const output = [stdout, stderr].filter(Boolean).join("\n").trim();

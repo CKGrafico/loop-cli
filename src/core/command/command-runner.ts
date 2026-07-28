@@ -11,7 +11,7 @@ import { StdoutCaptureTransform } from "./stdout-capture-transform.js";
 import { killProcessTree } from "./process-tree.js";
 import type { Telemetry, TelemetrySpan } from "../../daemon/telemetry/index.js";
 import type { CommandResult } from "../../daemon/telemetry/telemetry-types.js";
-import { getAgentIntegrations } from "../../daemon/telemetry/agent-integrations/index.js";
+import { getAgentIntegrations, detectAgentIntegration } from "../../daemon/telemetry/agent-integrations/index.js";
 import { getDataDir } from "../../shared/config/paths.js";
 import { parseOpencodeJsonOutput } from "../context/opencode-json-parser.js";
 import type { OpencodeContext } from "../context/types.js";
@@ -175,6 +175,22 @@ export async function executeCommand(
     }
   }
 
+  if (!detectedIntegrationId) {
+    const integration = detectAgentIntegration(command, commandArgs);
+    if (integration) {
+      detectedIntegrationId = integration.id;
+      const prepared = integration.prepare(
+        { command, args: commandArgs, cwd, env: {} },
+        {
+          runId: telemetryCtx?.runId ?? "",
+          loopId: telemetryCtx?.loopId ?? "",
+          loopName: telemetryCtx?.loopName ?? "",
+        },
+      );
+      telemetryEnv = { ...telemetryEnv, ...prepared.env };
+    }
+  }
+
   if (detectedIntegrationId) {
     const allIntegrations = getAgentIntegrations();
     const integration = allIntegrations.find((i) => i.id === detectedIntegrationId);
@@ -257,7 +273,7 @@ export async function executeCommand(
       killSignal: "SIGTERM",
       ...detachedOpt,
     })
-    : execa(command, commandArgs, {
+    : execa(effectiveCommand, effectiveArgs, {
       stdout: "pipe",
       stderr: "pipe",
       stdin: "ignore",
