@@ -25,12 +25,10 @@ function resolveNestedValue(context: Record<string, unknown>, key: string): unkn
 }
 
 export function interpolate(input: string, context: Record<string, unknown>): string {
-  // Support nested keys like {{opencode.tokens.input}} and {{opencode.tokens}}
   return input.replace(/{{([\w.]+)}}/g, (_, key: string) => {
     const raw = resolveNestedValue(context, key);
     if (raw === undefined || raw === null) return "";
 
-    // Objects and arrays render as indented JSON
     if (typeof raw === "object") {
       return shellEscape(JSON.stringify(raw, null, 2));
     }

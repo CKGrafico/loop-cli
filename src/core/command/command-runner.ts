@@ -94,6 +94,7 @@ export interface TelemetryCommandContext {
   projectName?: string;
   /** Per-task telemetry override from TaskDefinition */
   telemetryConfig?: import("../../types.js").TaskTelemetryConfig;
+  chainContext?: Record<string, unknown>;
 }
 
 export async function executeCommand(
@@ -107,12 +108,14 @@ export async function executeCommand(
   isChain: boolean = false,
   telemetryCtx?: TelemetryCommandContext,
 ): Promise<ExecutionResult> {
+  let effectiveCommand = command;
+  let effectiveArgs = commandArgs;
+
   const startedAt = new Date();
   if (!isChain) {
     const header = t("loop.runHeader", { timestamp: startedAt.toLocaleString(), runNumber: runNumber ?? 0 });
     logStream.write(header);
   }
-  logStream.write(t("loop.commandLine", { command: formatCommandLine(command, commandArgs) }));
   if (cwd) {
     logStream.write(t("loop.cwdLine", { cwd }));
   }
@@ -172,18 +175,12 @@ export async function executeCommand(
     }
   }
 
-  // Serve lifecycle: if an agent integration with serve support is detected,
-  // ensure the serve sidecar is running and inject --attach + --dir into args.
-  let effectiveCommand = command;
-  let effectiveArgs = commandArgs;
   if (detectedIntegrationId) {
     const allIntegrations = getAgentIntegrations();
     const integration = allIntegrations.find((i) => i.id === detectedIntegrationId);
     if (integration?.ensureServe && integration?.isServeAlive && integration?.prepareRunArgs) {
       try {
-        // Ensure serve is started (no-op if already running)
         const serveEnv: Record<string, string> = {};
-        // If we have telemetry env with OTEL config, pass it to serve
         if (telemetryEnv.OTEL_EXPORTER_OTLP_ENDPOINT) {
           serveEnv.OTEL_EXPORTER_OTLP_ENDPOINT = telemetryEnv.OTEL_EXPORTER_OTLP_ENDPOINT;
           serveEnv.OTEL_EXPORTER_OTLP_PROTOCOL = telemetryEnv.OTEL_EXPORTER_OTLP_PROTOCOL ?? "http/protobuf";
@@ -214,14 +211,21 @@ export async function executeCommand(
     }
   }
 
-  // Auto-inject --format json for opencode run so we can parse structured output
   if (detectedIntegrationId === "opencode" && effectiveArgs[0] === "run") {
     if (!effectiveArgs.includes("--format") && !effectiveArgs.includes("-f")) {
       effectiveArgs = [...effectiveArgs.slice(0, 1), "--format", "json", ...effectiveArgs.slice(1)];
     }
+    if (!effectiveArgs.includes("--session") && !effectiveArgs.includes("-s")) {
+      const opencodeCtx = telemetryCtx?.chainContext?.opencode as Record<string, unknown> | undefined;
+      const sessionId = (opencodeCtx?.session as Record<string, unknown> | undefined)?.id as string | undefined;
+      if (sessionId) {
+        effectiveArgs = [...effectiveArgs.slice(0, 1), "--session", sessionId, ...effectiveArgs.slice(1)];
+      }
+    }
   }
 
-  // Compute shell command after potential --attach injection
+  logStream.write(t("loop.commandLine", { command: formatCommandLine(effectiveCommand, effectiveArgs) }));
+
   const shellCommand = formatCommandLine(effectiveCommand, effectiveArgs);
   const needShell = /(\$\(|`|&&|\|\||;|>|<|\|)/.test(shellCommand);
 
@@ -298,7 +302,6 @@ export async function executeCommand(
       }
     }
 
-    // Attempt to parse agent usage from output
     if (detectedIntegrationId && stdoutCapture) {
       tryParseAgentUsage(
         telemetryCtx!.telemetry,
@@ -308,11 +311,9 @@ export async function executeCommand(
       );
     }
 
-    // Parse opencode JSONL output into context.opencode.*
     if (detectedIntegrationId === "opencode" && stdoutCapture) {
       const opencodeCtx = parseOpencodeJsonOutput(stdoutCapture.getCaptured());
       if (opencodeCtx) {
-        // Emit structured log for observability
         if (commandSpan) {
           commandSpan.setAttribute("loop_task.opencode.session_id", opencodeCtx.session.id);
           commandSpan.setAttribute("loop_task.opencode.cost", opencodeCtx.cost);
@@ -322,7 +323,6 @@ export async function executeCommand(
           }
         }
         // The parsed context is returned as part of the result so context-parser
-        // can merge it into the loop chain context
         (result as unknown as Record<string, unknown>).opencode = opencodeCtx;
       }
     }

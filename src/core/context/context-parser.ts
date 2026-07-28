@@ -69,11 +69,6 @@ export function mergeCommandOutput(
     Object.assign(context, parsed);
   }
 
-  // Merge structured opencode context under the "opencode" namespace.
-  // When the new opencode context references the same session as the existing
-  // one, accumulate tokens/cost/tools instead of overwriting. This gives the
-  // last task in a chain visibility into total session usage, not just the
-  // last task's usage.
   if (opencode && typeof opencode === "object") {
     const incoming = opencode as Record<string, unknown>;
     const existing = context.opencode as Record<string, unknown> | undefined;
@@ -85,10 +80,8 @@ export function mergeCommandOutput(
       incoming.session &&
       (existing.session as Record<string, unknown>).id === (incoming.session as Record<string, unknown>).id
     ) {
-      // Same session — accumulate
       context.opencode = accumulateOpencodeContext(existing, incoming);
     } else {
-      // Different session or no existing context — overwrite
       context.opencode = opencode;
     }
   }
@@ -99,11 +92,6 @@ export function mergeCommandOutput(
   }
 }
 
-/**
- * Accumulate tokens, cost, and tool counts across two opencode context objects
- * that share the same session ID. Non-accumulatable fields (session, gitSnapshot,
- * error, text) are overwritten with the latest values.
- */
 function accumulateOpencodeContext(
   existing: Record<string, unknown>,
   incoming: Record<string, unknown>,
@@ -138,7 +126,6 @@ function accumulateOpencodeContext(
       count: ((existingTools.count as number) ?? 0) + ((incomingTools.count as number) ?? 0),
       names: [...new Set([...existingToolNames, ...incomingToolNames])],
     },
-    // Latest values (overwrite, not accumulate)
     gitSnapshot: incoming.gitSnapshot ?? existing.gitSnapshot,
     error: incoming.error ?? existing.error,
     text: incoming.text ?? existing.text,

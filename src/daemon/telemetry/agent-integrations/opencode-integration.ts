@@ -141,14 +141,14 @@ export class OpenCodeTelemetryIntegration implements AgentTelemetryIntegration {
 
       this.serveProcess.catch((err) => {
         daemonLog(`opencode-serve: process error: ${String(err)}`);
-        this.serveProcess = null;
-        this.serveInfo = null;
       });
 
       this.serveProcess.on("exit", (code) => {
         daemonLog(`opencode-serve: process exited with code ${code}`);
-        this.serveProcess = null;
-        this.serveInfo = null;
+        if (code !== 0 && code !== null) {
+          this.serveProcess = null;
+          this.serveInfo = null;
+        }
       });
 
       // Wait for health check
@@ -173,8 +173,7 @@ export class OpenCodeTelemetryIntegration implements AgentTelemetryIntegration {
   }
 
   isServeAlive(): boolean {
-    // Fast check: if we don't have a process reference, serve is not alive
-    if (!this.serveProcess || !this.serveInfo) return false;
+    if (!this.serveInfo) return false;
     return true;
   }
 

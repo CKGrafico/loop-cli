@@ -114,6 +114,7 @@ export async function executeRunImpl(ctrl: ExecuteRunAccess, signal: AbortSignal
       taskName: task?.name,
       projectId: ctrl.options.projectId,
       telemetryConfig: task?.telemetry,
+      chainContext,
     }
     : undefined;
 
