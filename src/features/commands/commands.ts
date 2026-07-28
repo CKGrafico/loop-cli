@@ -24,6 +24,7 @@ function globalCommands(): Command[] {
     { label: t('cmd.toggleTelemetry'), value: 'toggle-telemetry', hint: '', tier: COMMAND_TIER_GLOBAL, category: COMMAND_CATEGORY_GLOBAL },
     { label: t('cmd.telemetryDiagnostics'), value: 'telemetry-diagnostics', hint: '', tier: COMMAND_TIER_GLOBAL, category: COMMAND_CATEGORY_GLOBAL },
     { label: t('cmd.telemetry'), value: 'telemetry', hint: '', tier: COMMAND_TIER_GLOBAL, category: COMMAND_CATEGORY_GLOBAL },
+    { label: 'OpenCode Server', value: 'opencode-server', hint: 'http://localhost:4096', tier: COMMAND_TIER_GLOBAL, category: COMMAND_CATEGORY_GLOBAL },
     { label: t('cmd.export'), value: 'export', hint: '', tier: COMMAND_TIER_GLOBAL, category: COMMAND_CATEGORY_GLOBAL, shortcut: 'ctrl+x' },
     { label: t('cmd.import'), value: 'import', hint: '', tier: COMMAND_TIER_GLOBAL, category: COMMAND_CATEGORY_GLOBAL, shortcut: 'ctrl+i' },
   ];
@@ -109,7 +110,7 @@ export function buildCommands(context: CommandContext): Command[] {
         { label: t('cmd.logs'), value: 'logs', hint: '', tier: COMMAND_TIER_ACTION, category: COMMAND_CATEGORY_LOOP, shortcut: 'ctrl+a+o' },
       );
 
-      if (loop.taskId && loop.isRecipe) {
+      if (loop.taskId) {
         commands.push({
           label: t('cmd.diagram'), value: 'diagram', hint: '',
           tier: COMMAND_TIER_ACTION, category: COMMAND_CATEGORY_LOOP,
@@ -177,7 +178,7 @@ export function buildTabCommands(context: CommandContext): Command[] {
       { label: t('cmd.logs'), value: 'logs', hint: '', tier: COMMAND_TIER_ACTION, category: COMMAND_CATEGORY_LOOP, shortcut: 'ctrl+a+o' },
     );
 
-    if (context.selectedLoop?.taskId && context.selectedLoop?.isRecipe) {
+    if (context.selectedLoop?.taskId) {
       commands.push({
         label: t('cmd.diagram'), value: 'diagram', hint: '',
         tier: COMMAND_TIER_ACTION, category: COMMAND_CATEGORY_LOOP,

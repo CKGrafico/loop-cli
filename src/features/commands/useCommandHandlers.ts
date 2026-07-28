@@ -247,19 +247,34 @@ export function useCommandHandlers(context: CommandHandlerContext) {
           try {
             const diagram = readRecipeDiagram(selected.recipeFilePath);
             if (diagram) {
-              // Render Mermaid as ASCII for the TUI modal
               const ascii = renderMermaidAsAscii(diagram);
               setDiagramModal(ascii);
             } else {
-              pushToast("error", t("diagram.noDiagramInRecipe"));
+              const ascii = renderChainDiagram(selected.taskId, tasks);
+              setDiagramModal(ascii);
             }
           } catch (e) {
             pushToast("error", t("diagram.readError", { message: (e as Error).message }));
           }
         } else {
-          pushToast("error", t("diagram.notARecipe"));
+          const ascii = renderChainDiagram(selected.taskId, tasks);
+          setDiagramModal(ascii);
         }
       }
+    },
+    "opencode-server": () => {
+      setDiagramModal(
+        "OpenCode Server\n" +
+        "================\n\n" +
+        "URL:    http://localhost:4096\n" +
+        "Health: GET http://localhost:4096/global/health\n\n" +
+        "Attach from another terminal:\n" +
+        "  opencode attach http://localhost:4096\n\n" +
+        "List sessions:\n" +
+        "  opencode session list\n\n" +
+        "Attach to a specific session:\n" +
+        "  opencode -s <session-id> --attach http://localhost:4096"
+      );
     },
     export: () => {
       exportService.exportConfig()
