@@ -65,10 +65,17 @@ export function mergeCommandOutput(
   opencode?: unknown,
 ): void {
   if (opencode && typeof opencode === "object") {
-    context.opencode = opencode;
-    const oc = opencode as Record<string, unknown>;
-    if (typeof oc.text === "string" && oc.text.length > 0) {
-      context.output = oc.text;
+    const incoming = opencode as Record<string, unknown>;
+    const existing = context.opencode as Record<string, unknown> | undefined;
+
+    if (existing && typeof existing === "object" && existing.session && incoming.session && (existing.session as Record<string, unknown>).id === (incoming.session as Record<string, unknown>).id) {
+      context.opencode = accumulateOpencodeContext(existing, incoming);
+    } else {
+      context.opencode = opencode;
+    }
+
+    if (typeof incoming.text === "string" && incoming.text.length > 0) {
+      context.output = incoming.text;
     } else {
       const trimmed = stdout.trim();
       if (trimmed.length > 0) context.output = trimmed;
@@ -82,14 +89,6 @@ export function mergeCommandOutput(
   const parsed = parseStdout(stdout);
   if (parsed !== null) {
     Object.assign(context, parsed);
-  }
-
-  const opencodeExisting = context.opencode as Record<string, unknown> | undefined;
-  const incoming = opencode as Record<string, unknown> | undefined;
-  if (incoming && typeof incoming === "object" && opencodeExisting && typeof opencodeExisting === "object" && opencodeExisting.session && incoming.session && (opencodeExisting.session as Record<string, unknown>).id === (incoming.session as Record<string, unknown>).id) {
-    context.opencode = accumulateOpencodeContext(opencodeExisting, incoming);
-  } else if (opencode && typeof opencode === "object") {
-    context.opencode = opencode;
   }
 
   const output = [stdout, stderr].filter(Boolean).join("\n").trim();
