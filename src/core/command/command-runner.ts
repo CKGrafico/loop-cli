@@ -220,6 +220,12 @@ export async function executeCommand(
       const sessionId = (opencodeCtx?.session as Record<string, unknown> | undefined)?.id as string | undefined;
       if (sessionId) {
         effectiveArgs = [...effectiveArgs.slice(0, 1), "--session", sessionId, ...effectiveArgs.slice(1)];
+        if (!effectiveArgs.includes("--model") && !effectiveArgs.includes("-m")) {
+          const model = (opencodeCtx as Record<string, unknown>)?.model as string | undefined;
+          if (model) {
+            effectiveArgs = [...effectiveArgs.slice(0, 1), "--model", model, ...effectiveArgs.slice(1)];
+          }
+        }
       }
     }
   }
@@ -314,6 +320,12 @@ export async function executeCommand(
     if (detectedIntegrationId === "opencode" && stdoutCapture) {
       const opencodeCtx = parseOpencodeJsonOutput(stdoutCapture.getCaptured());
       if (opencodeCtx) {
+        const modelIdx = effectiveArgs.indexOf("--model");
+        const modelShortIdx = effectiveArgs.indexOf("-m");
+        const modelIdxToUse = modelIdx >= 0 ? modelIdx : modelShortIdx;
+        if (modelIdxToUse >= 0 && modelIdxToUse + 1 < effectiveArgs.length) {
+          opencodeCtx.model = effectiveArgs[modelIdxToUse + 1];
+        }
         if (commandSpan) {
           commandSpan.setAttribute("loop_task.opencode.session_id", opencodeCtx.session.id);
           commandSpan.setAttribute("loop_task.opencode.cost", opencodeCtx.cost);

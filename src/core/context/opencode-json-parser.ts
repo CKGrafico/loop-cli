@@ -13,21 +13,22 @@ import type { OpencodeContext } from "./types.js";
  * Returns null if the input is not valid JSONL with a `type` field.
  */
 export function parseOpencodeJsonOutput(stdout: string): OpencodeContext | null {
-  const lines = stdout.trim().split("\n").filter((l) => l.trim());
+  const allLines = stdout.trim().split("\n").filter((l) => l.trim());
+  if (allLines.length === 0) return null;
 
-  if (lines.length === 0) return null;
-
-  // Verify first line is valid JSON with a `type` field
-  let firstParsed: unknown;
-  try {
-    firstParsed = JSON.parse(lines[0]);
-  } catch {
-    return null;
+  const jsonLines: Record<string, unknown>[] = [];
+  for (const line of allLines) {
+    try {
+      const parsed = JSON.parse(line);
+      if (typeof parsed === "object" && parsed !== null && "type" in parsed) {
+        jsonLines.push(parsed as Record<string, unknown>);
+      }
+    } catch {
+      // skip non-JSON lines (opencode prints status lines)
+    }
   }
 
-  if (typeof firstParsed !== "object" || firstParsed === null || !("type" in firstParsed)) {
-    return null;
-  }
+  if (jsonLines.length === 0) return null;
 
   const result: OpencodeContext = {
     session: { id: "", messageId: "" },
@@ -37,19 +38,13 @@ export function parseOpencodeJsonOutput(stdout: string): OpencodeContext | null 
     gitSnapshot: "",
     error: null,
     text: null,
+    model: null,
   };
 
   let lastTextBeforeStop: string | null = null;
   let sawStepFinishStop = false;
 
-  for (const line of lines) {
-    let event: Record<string, unknown>;
-    try {
-      event = JSON.parse(line);
-    } catch {
-      continue;
-    }
-
+  for (const event of jsonLines) {
     const type = event.type as string;
     const part = event.part as Record<string, unknown> | undefined;
 

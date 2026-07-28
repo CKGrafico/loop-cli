@@ -36,4 +36,5 @@ export interface OpencodeContext {
   } | null;
   /** Last text event before step_finish with reason=stop (agent's final summary). Option B. */
   text: string | null;
+  model: string | null;
 }
