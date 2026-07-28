@@ -326,9 +326,9 @@ export async function executeCommand(
       }
     }
 
-    if (detectedIntegrationId && stdoutCapture) {
+    if (detectedIntegrationId && stdoutCapture && telemetryCtx) {
       tryParseAgentUsage(
-        telemetryCtx!.telemetry,
+        telemetryCtx.telemetry,
         detectedIntegrationId,
         { exitCode: result.exitCode ?? 0, stdout: stdoutCapture.getCaptured(), duration },
         commandSpan,
