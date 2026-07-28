@@ -50,10 +50,6 @@ export function App(props: { onQuit: () => void }): React.ReactNode {
   const exportService = useInject<ExportService>(TYPES.ExportService);
   const { loops, daemonStatus, refresh } = useLoopPolling();
   const daemonSettings = useDaemonSettings();
-
-  if (daemonStatus === "starting") {
-    return React.createElement(Splash);
-  }
   const { view, push, pop } = useRouter("board");
   const { toasts, push: pushToast } = useToasts();
   const breakpoint = useBreakpoint();
@@ -113,6 +109,10 @@ export function App(props: { onQuit: () => void }): React.ReactNode {
 
   const handleConfirmYes = useCallback(() => { if (s.confirmState) { s.confirmState.onConfirm(); s.setConfirmState(null); } }, [s.confirmState]);
   const handleConfirmCancel = useCallback(() => { s.setConfirmState(null); }, []);
+
+  if (daemonStatus === "starting") {
+    return React.createElement(Splash);
+  }
 
   const cancelCreate = () => { s.setEditTarget(null); s.setCloneMode(false); s.setPendingTaskSelection(null); pop(); };
   const cancelTask = () => { s.setEditTask(null); pop(); };
