@@ -289,6 +289,23 @@ export class OpenTelemetryAdapter implements Telemetry {
     return this.settings.telemetryProtocol;
   }
 
+  /**
+   * Check if any agent serve sidecar is alive.
+   * When serve is alive, static OTEL config lives in the serve process
+   * and we skip per-task injection.
+   */
+  private checkServeAlive(): boolean {
+    try {
+      const integrations = getAgentIntegrations();
+      for (const integration of integrations) {
+        if (integration.isServeAlive?.()) return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   startLoop(input: LoopTelemetryInput): TelemetrySpan {
     const span = this.tracer.startSpan(SPAN_NAMES.LOOP_RUN, { kind: SpanKind.SERVER });
     span.setAttributes({
@@ -457,32 +474,38 @@ export class OpenTelemetryAdapter implements Telemetry {
       }
     }
 
-    env.OTEL_EXPORTER_OTLP_ENDPOINT = endpoint;
-    env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = endpoint;
-    env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT = endpoint;
-    env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT = endpoint;
-    env.OTEL_EXPORTER_OTLP_PROTOCOL = protocol;
-    env.OTEL_TRACES_EXPORTER = "otlp";
-    env.OTEL_METRICS_EXPORTER = "otlp";
-    env.OTEL_LOGS_EXPORTER = "otlp";
+    // Check if an agent serve sidecar is alive — if so, static OTEL config
+    // lives in the serve process env and we skip per-task injection.
+    const serveAlive = this.checkServeAlive();
 
-    const authHeaders = process.env.OTEL_EXPORTER_OTLP_HEADERS
-      ?? process.env.OTEL_EXPORTER_OTLP_TRACES_HEADERS;
-    if (authHeaders) {
-      env.OTEL_EXPORTER_OTLP_HEADERS = authHeaders;
+    if (!serveAlive) {
+      env.OTEL_EXPORTER_OTLP_ENDPOINT = endpoint;
+      env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = endpoint;
+      env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT = endpoint;
+      env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT = endpoint;
+      env.OTEL_EXPORTER_OTLP_PROTOCOL = protocol;
+      env.OTEL_TRACES_EXPORTER = "otlp";
+      env.OTEL_METRICS_EXPORTER = "otlp";
+      env.OTEL_LOGS_EXPORTER = "otlp";
+
+      const authHeaders = process.env.OTEL_EXPORTER_OTLP_HEADERS
+        ?? process.env.OTEL_EXPORTER_OTLP_TRACES_HEADERS;
+      if (authHeaders) {
+        env.OTEL_EXPORTER_OTLP_HEADERS = authHeaders;
+      }
+
+      const correlationAttrs: Record<string, string> = {
+        [CORRELATION_KEYS.RUN_ID]: childContext.runId,
+        [CORRELATION_KEYS.LOOP_ID]: childContext.loopId,
+      };
+      if (childContext.taskId) correlationAttrs[CORRELATION_KEYS.TASK_ID] = childContext.taskId;
+      if (childContext.projectId) correlationAttrs[CORRELATION_KEYS.PROJECT_ID] = childContext.projectId;
+      const mergedResourceAttrs = this.mergeResourceAttributes(
+        process.env.OTEL_RESOURCE_ATTRIBUTES,
+        correlationAttrs,
+      );
+      env.OTEL_RESOURCE_ATTRIBUTES = mergedResourceAttrs;
     }
-
-    const correlationAttrs: Record<string, string> = {
-      [CORRELATION_KEYS.RUN_ID]: childContext.runId,
-      [CORRELATION_KEYS.LOOP_ID]: childContext.loopId,
-    };
-    if (childContext.taskId) correlationAttrs[CORRELATION_KEYS.TASK_ID] = childContext.taskId;
-    if (childContext.projectId) correlationAttrs[CORRELATION_KEYS.PROJECT_ID] = childContext.projectId;
-    const mergedResourceAttrs = this.mergeResourceAttributes(
-      process.env.OTEL_RESOURCE_ATTRIBUTES,
-      correlationAttrs,
-    );
-    env.OTEL_RESOURCE_ATTRIBUTES = mergedResourceAttrs;
 
     // Apply agent-specific integrations when auto-instrumentation is enabled
     let integrationId: string | undefined;
