@@ -7,6 +7,8 @@
 
 `loop-task` is a cross-platform CLI that runs shell commands at human-readable intervals. Create loops in the background, manage them from an interactive TUI board, or run them in the foreground. It is the **heartbeat** primitive for [loop engineering](#loop-engineering): instead of running a task by hand every time, you schedule it once and let it run.
 
+It answers *"I need this to run on a clock, on this machine."* If your answer is instead *"I need this to happen when something changes in my repository,"* use [GitHub Agentic Workflows](https://github.github.io/gh-aw/) — see below.
+
 **[plainconceptsplatform.github.io/loop-task](https://plainconceptsplatform.github.io/loop-task)**
 
 [![npm version](https://img.shields.io/npm/v/@plainconceptsplatform/loop-task?style=flat-square&color=black)](https://www.npmjs.com/package/@plainconceptsplatform/loop-task)
@@ -15,6 +17,28 @@
 [![node](https://img.shields.io/node/v/@plainconceptsplatform/loop-task?style=flat-square&color=black)](https://nodejs.org)
 
 </div>
+
+> ### Reach for Agentic Workflows first
+>
+> If the work lives in a GitHub repository and reacts to repository events, this is **not** the
+> right tool. Use [GitHub Agentic Workflows](https://github.github.io/gh-aw/) on a **self-hosted
+> runner** with `engine: opencode` pointed at the binary on that machine. You get event triggers
+> with no polling latency, a fresh checkout per run so there is no state to recover, a
+> `concurrency` group instead of a hand-rolled mutex, and the `opencode` session already
+> authenticated on the runner rather than per-token API billing.
+>
+> ```yaml
+> engine:
+>   id: opencode        # experimental in gh-aw
+>   command: /usr/bin/opencode
+> ```
+>
+> `loop-task` is the alternative for when you cannot depend on that: work that is not
+> repository-shaped, no GitHub Actions, no runner available, or work that cannot leave a specific
+> machine. [The full breakdown is below.](#when-to-use-this-and-when-not-to)
+>
+> **Never attach a self-hosted runner to a public repository.** A pull request from a fork would
+> execute arbitrary code on it, with whatever credentials it holds.
 
 ## Loop engineering
 
@@ -43,6 +67,19 @@ loop-task new 30m -- opencode run "find missing translations and translate them,
 No cron files to maintain and no daemon to babysit: loops persist across reboots, run in the background, and you watch them from a terminal board. The idea is described well in Addy Osmani's [Loop Engineering](https://addyosmani.com/blog/loop-engineering/), where scheduled automations are the first of the five pieces of a working loop.
 
 > **Stay in control.** A loop running unattended is also a loop failing unattended. Use `--max-runs`, watch the run history on the board, and review what each loop produces. The leverage moves to the loop; the responsibility stays with you.
+
+## When to use this, and when not to
+
+The recommended default is [Agentic Workflows on a self-hosted runner](#reach-for-agentic-workflows-first). Reach for `loop-task` when you cannot depend on that:
+
+- **The work is not repository-shaped.** Health checks, data syncs, deploy polls, report generation. There is no GitHub event to hang them off.
+- **You are not on GitHub Actions.** Azure DevOps, GitLab, or no CI at all.
+- **A self-hosted runner is not an option**, and API-key billing for a loop that fires every 20 minutes is not acceptable.
+- **The work needs your machine.** VPN-only resources, a local database, licensed tooling, an authenticated CLI session that cannot move to a runner.
+- **You need to watch it run.** Live logs, pause and resume mid-flight, one board across several machines. CI gives you logs after the fact.
+- **Sessions are long or stateful** in ways a job timeout does not accommodate.
+
+The two compose rather than compete: a repository loop can live in Actions while a local loop watches something Actions cannot see. What decides is whether the trigger is an **event** or a **clock**, and whether the work can leave your machine.
 
 ## Quick start
 
