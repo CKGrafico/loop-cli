@@ -289,8 +289,10 @@ export async function executeCommand(
     activePids.add(child.pid);
   }
 
+  const isOpencodeJson = detectedIntegrationId === "opencode" && effectiveArgs.includes("--format") && effectiveArgs.includes("json");
+
   const stdoutCapture = (captureStdout || !!detectedIntegrationId)
-    ? new StdoutCaptureTransform(MAX_CONTEXT_STDOUT_BYTES)
+    ? new StdoutCaptureTransform(MAX_CONTEXT_STDOUT_BYTES, isOpencodeJson)
     : null;
   const stderrCapture = (captureStdout || !!detectedIntegrationId)
     ? new StdoutCaptureTransform(MAX_CONTEXT_STDOUT_BYTES)
@@ -306,8 +308,6 @@ export async function executeCommand(
   } else {
     child.stderr!.pipe(logStream, { end: false });
   }
-
-  const isOpencodeJson = detectedIntegrationId === "opencode" && effectiveArgs.includes("--format") && effectiveArgs.includes("json");
 
   try {
     const result = await child;

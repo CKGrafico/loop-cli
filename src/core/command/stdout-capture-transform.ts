@@ -15,29 +15,62 @@ export class StdoutCaptureTransform extends Transform {
   private readonly maxBytes: number;
   private partialLine = "";
   private kvPairs: Record<string, string> = {};
+  private suppressJsonl = false;
+  private jsonBuffer = "";
 
-  constructor(maxBytes: number = MAX_CONTEXT_STDOUT_BYTES) {
+  constructor(maxBytes: number = MAX_CONTEXT_STDOUT_BYTES, suppressJsonl = false) {
     super({ decodeStrings: true });
     this.maxBytes = maxBytes;
+    this.suppressJsonl = suppressJsonl;
   }
 
   _transform(chunk: Buffer, _encoding: BufferEncoding, callback: TransformCallback): void {
-    this.push(chunk);
-
-    if (this.truncated) {
-      callback();
-      return;
+    if (this.suppressJsonl) {
+      this.handleJsonlSuppression(chunk, callback);
+    } else {
+      this.handleNormal(chunk, callback);
     }
+  }
 
-    const chunkBytes = chunk.byteLength;
+  private handleNormal(chunk: Buffer, callback: TransformCallback): void {
+    this.push(chunk);
+    this.captureBytes(chunk);
+    this.extractKvFromChunk(chunk);
+    callback();
+  }
+
+  private handleJsonlSuppression(chunk: Buffer, callback: TransformCallback): void {
+    this.captureBytes(chunk);
+    const text = chunk.toString("utf-8");
+    const combined = this.jsonBuffer + text;
+    const lines = combined.split("\n");
+    this.jsonBuffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed === "object" && parsed !== null && "type" in parsed) {
+          continue;
+        }
+      } catch {
+        // not JSON, pass through
+      }
+      this.push(line + "\n");
+    }
+    callback();
+  }
+
+  private captureBytes(chunk: Buffer): void {
+    if (this.truncated) return;
     const remaining = this.maxBytes - this.totalBytes;
-
     if (remaining <= 0) {
       this.truncated = true;
-      callback();
       return;
     }
-
+    const chunkBytes = chunk.byteLength;
     if (chunkBytes <= remaining) {
       this.captured.push(Buffer.from(chunk));
       this.totalBytes += chunkBytes;
@@ -47,10 +80,7 @@ export class StdoutCaptureTransform extends Transform {
       this.totalBytes += slice.byteLength;
       this.truncated = true;
     }
-
     this.extractKvFromChunk(chunk);
-
-    callback();
   }
 
   private extractKvFromChunk(chunk: Buffer): void {
@@ -74,6 +104,20 @@ export class StdoutCaptureTransform extends Transform {
         this.kvPairs[match[1]] = match[2];
       }
       this.partialLine = "";
+    }
+    if (this.jsonBuffer) {
+      const trimmed = this.jsonBuffer.trim();
+      if (trimmed) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (!(typeof parsed === "object" && parsed !== null && "type" in parsed)) {
+            this.push(this.jsonBuffer + "\n");
+          }
+        } catch {
+          this.push(this.jsonBuffer + "\n");
+        }
+      }
+      this.jsonBuffer = "";
     }
     callback();
   }
