@@ -19,7 +19,7 @@ const GITHUB_SOURCE_REGEX = /^[a-zA-Z0-9_.\-]+\/[a-zA-Z0-9_.\-]+$/;
 
 function validateGithubSource(githubSource: string): void {
   if (!GITHUB_SOURCE_REGEX.test(githubSource)) {
-    throw new Error(`Invalid githubSource format: "${githubSource}". Expected owner/repo (e.g. CKGrafico/loop-task)`);
+    throw new Error(`Invalid githubSource format: "${githubSource}". Expected owner/repo (e.g. PlainConceptsPlatform/loop-task)`);
   }
 }
 

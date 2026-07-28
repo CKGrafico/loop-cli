@@ -12,7 +12,7 @@ Install Bun: `npm install -g bun`
 ## Getting started
 
 ```bash
-git clone https://github.com/CKGrafico/loop-task.git
+git clone https://github.com/PlainConceptsPlatform/loop-task.git
 cd loop-task
 bun install
 npm run build

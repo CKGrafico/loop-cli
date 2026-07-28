@@ -1,6 +1,8 @@
 // @ts-nocheck
-import * as __fd_glob_12 from "../content/docs/troubleshooting.mdx?collection=docs"
-import * as __fd_glob_11 from "../content/docs/task-chaining.mdx?collection=docs"
+import * as __fd_glob_14 from "../content/docs/troubleshooting.mdx?collection=docs"
+import * as __fd_glob_13 from "../content/docs/task-chaining.mdx?collection=docs"
+import * as __fd_glob_12 from "../content/docs/recipe-loops.mdx?collection=docs"
+import * as __fd_glob_11 from "../content/docs/opentelemetry.mdx?collection=docs"
 import * as __fd_glob_10 from "../content/docs/mcp-server.mdx?collection=docs"
 import * as __fd_glob_9 from "../content/docs/index.mdx?collection=docs"
 import * as __fd_glob_8 from "../content/docs/http-api.mdx?collection=docs"
@@ -17,4 +19,4 @@ import type * as Config from '../source.config';
 
 const create = fromConfig<typeof Config>();
 
-export const docs = await create.docs("docs", "content/docs", {"meta.yaml": __fd_glob_0, }, {"agent-workflows.mdx": __fd_glob_1, "architecture.mdx": __fd_glob_2, "cli-reference.mdx": __fd_glob_3, "configuration.mdx": __fd_glob_4, "docker.mdx": __fd_glob_5, "examples.mdx": __fd_glob_6, "getting-started.mdx": __fd_glob_7, "http-api.mdx": __fd_glob_8, "index.mdx": __fd_glob_9, "mcp-server.mdx": __fd_glob_10, "task-chaining.mdx": __fd_glob_11, "troubleshooting.mdx": __fd_glob_12, });
+export const docs = await create.docs("docs", "content/docs", {"meta.yaml": __fd_glob_0, }, {"agent-workflows.mdx": __fd_glob_1, "architecture.mdx": __fd_glob_2, "cli-reference.mdx": __fd_glob_3, "configuration.mdx": __fd_glob_4, "docker.mdx": __fd_glob_5, "examples.mdx": __fd_glob_6, "getting-started.mdx": __fd_glob_7, "http-api.mdx": __fd_glob_8, "index.mdx": __fd_glob_9, "mcp-server.mdx": __fd_glob_10, "opentelemetry.mdx": __fd_glob_11, "recipe-loops.mdx": __fd_glob_12, "task-chaining.mdx": __fd_glob_13, "troubleshooting.mdx": __fd_glob_14, });

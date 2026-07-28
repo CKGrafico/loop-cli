@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "@plainconceptsplatform/ui-theme": "^0.1.0",
     "@types/mdx": "^2.0.14",
     "fumadocs-core": "^15.8.5",
     "fumadocs-mdx": "^14.0.0",

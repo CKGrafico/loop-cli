@@ -460,7 +460,7 @@
   "project.wizard.directoryPrompt": "Working directory? (optional)",
   "project.wizard.directoryHint": "Default directory for loops in this project. Leave blank to inherit",
   "project.wizard.githubSourcePrompt": "GitHub Source? (optional)",
-  "project.wizard.githubSourceHint": "Repository in owner/repo format, e.g. CKGrafico/loop-task",
+  "project.wizard.githubSourceHint": "Repository in owner/repo format, e.g. PlainConceptsPlatform/loop-task",
   "project.error.updateFailed": "Failed to update project",
   "project.error.deleteFailed": "Failed to delete project",
   "project.toastCreated": "Project \"{name}\" created",

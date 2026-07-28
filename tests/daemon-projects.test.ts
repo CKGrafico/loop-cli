@@ -89,9 +89,9 @@ describe("ProjectManager", () => {
 
     it("creates project with directory and githubSource", () => {
       manager.init();
-      const project = manager.create("Work", "#06b6d4", "/home/user/project", "CKGrafico/loop-task");
+      const project = manager.create("Work", "#06b6d4", "/home/user/project", "PlainConceptsPlatform/loop-task");
       expect(project.directory).toBe("/home/user/project");
-      expect(project.githubSource).toBe("CKGrafico/loop-task");
+      expect(project.githubSource).toBe("PlainConceptsPlatform/loop-task");
     });
 
     it("creates project without githubSource when not provided", () => {
@@ -110,7 +110,7 @@ describe("ProjectManager", () => {
     it("accepts valid githubSource formats", () => {
       manager.init();
       expect(() => manager.create("Ok1", "#fff", undefined, "owner/repo")).not.toThrow();
-      expect(() => manager.create("Ok2", "#fff", undefined, "CKGrafico/loop-task")).not.toThrow();
+      expect(() => manager.create("Ok2", "#fff", undefined, "PlainConceptsPlatform/loop-task")).not.toThrow();
       expect(() => manager.create("Ok3", "#fff", undefined, "my-org.my-team/my.repo")).not.toThrow();
     });
 

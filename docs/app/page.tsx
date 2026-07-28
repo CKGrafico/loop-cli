@@ -1,3 +1,5 @@
+import Image from 'next/image';
+import { asset } from '@/lib/asset';
 import Link from 'next/link';
 import {
   ArrowRightIcon,
@@ -32,7 +34,7 @@ const rubric = [
   },
   {
     word: 'Controllable.',
-    text: 'Every loop is live on the board: watch logs, CheckIcon status, pause, stop, and chain, all from the keyboard.',
+    text: 'Every loop is live on the board: watch logs, check status, pause, stop, and chain, all from the keyboard.',
   },
 ];
 
@@ -125,7 +127,7 @@ const comparison: { label: string; loopTask: Cell; cron: Cell; os: Cell }[] = [
   {
     label: 'Run history & live logs',
     loopTask: { ok: true },
-    cron: { ok: false, note: 'CheckIcon your mail' },
+    cron: { ok: false, note: 'check your mail' },
     os: { ok: false, note: 'event viewer' },
   },
   {
@@ -144,7 +146,7 @@ const comparison: { label: string; loopTask: Cell; cron: Cell; os: Cell }[] = [
 
 const examples = [
   {
-    label: 'Health CheckIcon',
+    label: 'Health check',
     cmd: 'loop-task new 10s -- curl -sf https://api.example.com/health',
   },
   {
@@ -267,13 +269,13 @@ export default function LandingPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/docs/getting-started"
-                  className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-[#0a0e14] transition hover:bg-brand-soft active:translate-y-px"
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-brand-ink transition hover:bg-brand-soft active:translate-y-px"
                 >
                   Get started
                   <ArrowRightIcon size={15} weight="bold" />
                 </Link>
                 <a
-                  href="https://github.com/ckgrafico/loop-task"
+                  href="https://github.com/PlainConceptsPlatform/loop-task"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-lg border border-border-dim bg-surface px-5 py-2.5 text-sm font-medium text-text-sec transition hover:text-text active:translate-y-px"
@@ -290,11 +292,15 @@ export default function LandingPage() {
             className="animate-fade-up relative lg:col-span-7"
             style={{ animationDelay: '240ms' }}
           >
-            <div className="overflow-hidden rounded-xl border border-border-dim shadow-2xl shadow-black/50 lg:w-[54vw] lg:max-w-none">
-              <img
-                src="/demo.gif"
+            <div className="overflow-hidden rounded-xl border border-border-dim shadow-2xl shadow-[var(--shadow-tint)] lg:w-[54vw] lg:max-w-none">
+              <Image
+                src={asset('/demo.gif')}
                 alt="Recording of the loop-task terminal board creating and monitoring loops"
-                className="w-full"
+                width={1610}
+                height={930}
+                unoptimized
+                priority
+                className="h-auto w-full"
               />
             </div>
             <p className="mt-3 font-mono text-xs text-text-muted">
@@ -329,7 +335,7 @@ export default function LandingPage() {
           <p className="mb-8 max-w-2xl text-text-sec">
             A <span className="text-text">loop</span> is a recurring goal: you
             define a purpose, give it an interval, and let it iterate. It scales
-            from a 10-second health CheckIcon to an AI agent chewing through a
+            from a 10-second health check to an AI agent chewing through a
             backlog, and you supervise every one of them from the same board.
           </p>
 
@@ -572,13 +578,13 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/docs/getting-started"
-                className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-[#0a0e14] transition hover:bg-brand-soft active:translate-y-px"
+                className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-brand-ink transition hover:bg-brand-soft active:translate-y-px"
               >
                 Get started
                 <ArrowRightIcon size={15} weight="bold" />
               </Link>
               <a
-                href="https://github.com/ckgrafico/loop-task"
+                href="https://github.com/PlainConceptsPlatform/loop-task"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-lg border border-border-dim bg-surface px-5 py-2.5 text-sm font-medium text-text-sec transition hover:text-text active:translate-y-px"

@@ -700,20 +700,20 @@ describe("HttpApiServer integration", () => {
         name: "MyProj",
         color: "#123456",
         directory: "/home/user/project",
-        githubSource: "CKGrafico/loop-task",
+        githubSource: "PlainConceptsPlatform/loop-task",
       });
 
       expect(res.status).toBe(201);
       expect(res.json.ok).toBe(true);
       expect(res.json.data.name).toBe("MyProj");
       expect(res.json.data.directory).toBe("/home/user/project");
-      expect(res.json.data.githubSource).toBe("CKGrafico/loop-task");
-      expect(mocks.mockProjectManager.create).toHaveBeenCalledWith("MyProj", "#123456", "/home/user/project", "CKGrafico/loop-task");
+      expect(res.json.data.githubSource).toBe("PlainConceptsPlatform/loop-task");
+      expect(mocks.mockProjectManager.create).toHaveBeenCalledWith("MyProj", "#123456", "/home/user/project", "PlainConceptsPlatform/loop-task");
     });
 
     it("POST /api/projects with invalid githubSource returns 400", async () => {
       mocks.mockProjectManager.create.mockImplementationOnce(() => {
-        throw new Error('Invalid githubSource format: "invalid". Expected owner/repo (e.g. CKGrafico/loop-task)');
+        throw new Error('Invalid githubSource format: "invalid". Expected owner/repo (e.g. PlainConceptsPlatform/loop-task)');
       });
       const res = await request(port, "POST", "/api/projects", {
         name: "MyProj",

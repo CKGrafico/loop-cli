@@ -7,20 +7,30 @@ The system SHALL provide a Fumadocs-based documentation site under `docs/` using
 - **WHEN** `pnpm --filter docs build` is run in CI
 - **THEN** Next.js produces a static export in `docs/out/` containing HTML, CSS, JS, and assets
 
-#### Scenario: CNAME preserved
+#### Scenario: Served from a GitHub Pages project site
 - **WHEN** the docs site is deployed
-- **THEN** `docs/CNAME` containing `loop.ckgrafico.com` is present in the build output
+- **THEN** it is served from `https://plainconceptsplatform.github.io/loop-task/` with no custom domain and therefore no `CNAME` file
+- **AND** `next.config.mjs` sets `basePath` and `trailingSlash` so routes and assets resolve under the `/loop-task` subpath
 
-### Requirement: Dark theme from DESIGN.md tokens
-The documentation site SHALL use a dark-only theme derived from DESIGN.md color tokens (bg.base #0a0e14, brand amber #fbbf24, loop blue #38bdf8, task purple #a78bfa, project green #34d399, and semantic colors for success/warning/danger/idle).
+### Requirement: Platform Foundations theme with the loop-task accent
+The documentation site SHALL be themed by the published `@plainconceptsplatform/ui-theme` package (the Platform Foundations styleguide), using the Platform neutral ramp, the Outfit typeface, and the Platform radius scale, with the loop-task amber bound to `--primary` as the only product-specific signal.
 
-#### Scenario: Token mapping to Tailwind
-- **WHEN** the Tailwind config is loaded
-- **THEN** DESIGN.md tokens are mapped to Tailwind utility classes (e.g. `bg-base`, `text-brand`, `text-loop`, `border-task`)
+#### Scenario: Theme comes from the shared package
+- **WHEN** `docs/app/global.css` is loaded
+- **THEN** it imports `@plainconceptsplatform/ui-theme/theme.css` and `@plainconceptsplatform/ui-theme/base.css` after the Fumadocs `neutral` and `preset` stylesheets
+- **AND** Fumadocs `--color-fd-*` variables are mapped onto the Platform semantic tokens
 
-#### Scenario: Consistent dark theme across pages
+#### Scenario: Light and dark both supported
 - **WHEN** any page (landing or docs) is viewed
-- **THEN** the background, text, borders, and accents use the DESIGN.md dark palette with no light-mode variant
+- **THEN** both a light and a dark palette are available, defaulting to the visitor's system preference, and a theme toggle is reachable from the landing navbar and the docs chrome
+
+#### Scenario: Accent meets contrast requirements in both modes
+- **WHEN** the amber accent is used for text or as a button fill
+- **THEN** it meets WCAG 2.2 AA contrast, using a darkened amber (#a16207) in light mode and #fbbf24 in dark mode
+
+#### Scenario: Product token names remain valid
+- **WHEN** existing markup uses product utilities such as `bg-base`, `text-brand`, `text-text-sec` or `border-border-dim`
+- **THEN** those names resolve through `@theme inline` aliases onto Platform semantic tokens, so they flip correctly between light and dark
 
 ### Requirement: Redesigned landing page
 The landing page SHALL replace the AI-generated uniform card grid with a premium, non-templated design featuring asymmetric layout, composition variety, confident hero (no typewriter animation), and humanized copy.

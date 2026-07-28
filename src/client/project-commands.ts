@@ -96,7 +96,7 @@ export async function createProjectCli(
   try {
     if (githubSource !== undefined && githubSource !== "") {
       if (!/^[a-zA-Z0-9_.\-]+\/[a-zA-Z0-9_.\-]+$/.test(githubSource)) {
-        throw new Error(`Invalid github-source format: "${githubSource}". Expected owner/repo (e.g. CKGrafico/loop-task)`);
+        throw new Error(`Invalid github-source format: "${githubSource}". Expected owner/repo (e.g. PlainConceptsPlatform/loop-task)`);
       }
     }
     const color = colorInput ? resolveColor(colorInput) : PROJECT_COLORS.cyan;

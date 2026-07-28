@@ -7,7 +7,7 @@
 
 `loop-task` is a cross-platform CLI that runs shell commands at human-readable intervals. Create loops in the background, manage them from an interactive TUI board, or run them in the foreground. It is the **heartbeat** primitive for [loop engineering](#loop-engineering): instead of running a task by hand every time, you schedule it once and let it run.
 
-**[loop.ckgrafico.com](https://loop.ckgrafico.com)**
+**[plainconceptsplatform.github.io/loop-task](https://plainconceptsplatform.github.io/loop-task)**
 
 [![npm version](https://img.shields.io/npm/v/loop-task?style=flat-square&color=black)](https://www.npmjs.com/package/loop-task)
 [![npm downloads](https://img.shields.io/npm/dm/loop-task?style=flat-square&color=black)](https://www.npmjs.com/package/loop-task)
@@ -23,7 +23,7 @@
 `loop-task` is that heartbeat as a tiny local primitive. Some examples:
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/CKGrafico/loop-task/refs/heads/main/demo.gif" alt="loop-task demo" width="700" />
+<img src="https://raw.githubusercontent.com/PlainConceptsPlatform/loop-task/refs/heads/main/demo.gif" alt="loop-task demo" width="700" />
 </div>
 
 ```bash
@@ -69,7 +69,7 @@ npx loop-task new 30m -- npm test
 Install the public Loop Task skills with:
 
 ```bash
-npx skills add ckgrafico/loop-task
+npx skills add PlainConceptsPlatform/loop-task
 ```
 
 The repository also contains internal development skills under `.agents/skills/`.

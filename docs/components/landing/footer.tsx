@@ -1,4 +1,5 @@
 import { RepeatIcon } from '@phosphor-icons/react/dist/ssr';
+import Link from 'next/link';
 
 export function Footer() {
   return (
@@ -16,25 +17,22 @@ export function Footer() {
         <p className="text-text-muted text-xs">
           MIT &copy;{' '}
           <a
-            href="https://ckgrafico.com"
+            href="https://github.com/PlainConceptsPlatform"
             target="_blank"
             rel="noopener noreferrer"
             className="text-text-sec hover:text-text transition-colors"
           >
-            ckgrafico
+            Plain Concepts
           </a>
         </p>
 
         {/* Links */}
         <div className="flex items-center gap-4 text-xs text-text-sec">
-          <a
-            href="/docs"
-            className="hover:text-text transition-colors"
-          >
+          <Link href="/docs" className="hover:text-text transition-colors">
             Docs
-          </a>
+          </Link>
           <a
-            href="https://github.com/ckgrafico/loop-task"
+            href="https://github.com/PlainConceptsPlatform/loop-task"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-text transition-colors"

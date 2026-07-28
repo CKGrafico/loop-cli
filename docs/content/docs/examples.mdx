@@ -70,5 +70,5 @@ loop-task new 30m --on-success <step-3-id> -- gh pr create --fill --head "$(git 
 Both pipelines share one property that makes them safe to leave running: every step reacts to the previous step's exit code, so an agent never fires unless there is real work waiting. And because each loop is live on the board, you can pause implementation, watch a run's logs, or stop the whole chain with a single keypress.
 
 <Callout type="info" title="More examples coming">
-  This page is growing. If you have a loop worth sharing, [open an issue on GitHub](https://github.com/CKGrafico/loop-task/issues).
+  This page is growing. If you have a loop worth sharing, [open an issue on GitHub](https://github.com/PlainConceptsPlatform/loop-task/issues).
 </Callout>

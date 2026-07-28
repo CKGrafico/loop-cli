@@ -54,15 +54,15 @@
     "background-tasks",
     "scheduler"
   ],
-  "author": "Quique Fdez Guerra",
+  "author": "Plain Concepts",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/CKGrafico/loop-task.git"
+    "url": "https://github.com/PlainConceptsPlatform/loop-task.git"
   },
-  "homepage": "https://github.com/CKGrafico/loop-task",
+  "homepage": "https://github.com/PlainConceptsPlatform/loop-task",
   "bugs": {
-    "url": "https://github.com/CKGrafico/loop-task/issues"
+    "url": "https://github.com/PlainConceptsPlatform/loop-task/issues"
   },
   "engines": {
     "node": ">=20.0.0"

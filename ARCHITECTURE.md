@@ -675,14 +675,14 @@ All shell commands must be prefixed with `rtk` in agent contexts (see AGENTS.md)
 | Field | Value |
 |---|---|
 | Name | `loop-task` |
-| Repository | `loop-task` (https://github.com/CKGrafico/loop-task) |
+| Repository | `loop-task` (https://github.com/PlainConceptsPlatform/loop-task) |
 | Package name | `loop-task` on npm |
 | Language | TypeScript 5.8 (strict, ESM) |
 | Type | CLI tool + TUI + background daemon |
 | Runtime | Node.js >= 20 |
 | Version | 2.0.0 |
 | Date of review | 2026-07-08 |
-| Maintainer | Quique Fdez Guerra |
+| Maintainer | Plain Concepts |
 
 ---
 
