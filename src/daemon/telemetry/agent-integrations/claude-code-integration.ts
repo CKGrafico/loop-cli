@@ -12,6 +12,12 @@ const CLAUDE_BINARIES = ["claude"];
 /**
  * Detects `claude -p ...` or `claude --print ...` invocations and
  * enables Claude Code's native telemetry, routing to loop-task's endpoint.
+ *
+ * Claude Code does not support a persistent serve model with `--attach`
+ * equivalent. All telemetry env is injected per-task as fallback.
+ * When Claude Code adds serve-attach support, implement the serve
+ * lifecycle methods (ensureServe, isServeAlive, prepareRunArgs,
+ * shutdownServe) here.
  */
 export class ClaudeCodeTelemetryIntegration implements AgentTelemetryIntegration {
   readonly id = "claude-code";

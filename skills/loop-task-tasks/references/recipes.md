@@ -338,3 +338,84 @@ The token efficiency answer from the questionnaire determines how to compose the
 | Low | One large AI task that handles searching, processing, and finalization. The AI runner receives the objective and manages everything internally. Least reliable, most token-intensive. |
 
 The critical and moderate strategies use the scaffold pattern: concrete tasks bookend the AI work. The low strategy collapses everything into one AI invocation - simpler to design but harder to debug and recover from failure.
+
+## OpenCode Serve Integration Patterns
+
+When opencode serve is running (managed by the daemon), `opencode run` tasks automatically use `--attach` for warm-start. `--format json` is auto-injected, and `context.opencode.*` keys are available in subsequent tasks.
+
+### Pattern 1: Session chaining (implement → fix-tests)
+
+```yaml
+- id: implement
+  command: opencode
+  commandArgs: [run, --agent, fullstack, "implement #{{number}}: {{title}}. {{body}}"]
+  # --attach and --format json auto-injected
+  # context.opencode.session.id now available
+  onSuccessTaskId: fix-tests
+
+- id: fix-tests
+  command: opencode
+  commandArgs: [run, --session, "{{opencode.session.id}}", --agent, fullstack, "fix the failing tests"]
+  # serve resumes session — agent remembers the implementation
+  onSuccessTaskId: pr
+
+- id: pr
+  command: sh
+  commandArgs:
+    - -c
+    - 'gh pr create --title "Resolve #{{number}}: {{title}}" --body "Closes #{{number}}"'
+```
+
+### Pattern 2: Token and cost reporting in PR comments
+
+```yaml
+- id: implement
+  command: opencode
+  commandArgs: [run, --agent, fullstack, "implement #{{number}}"]
+  onSuccessTaskId: pr
+
+- id: pr
+  command: sh
+  commandArgs:
+    - -c
+    - >
+      gh pr create --title "Resolve #{{number}}: {{title}}"
+      --body "Closes #{{number}}
+
+      Token usage:
+      {{opencode.tokens}}
+
+      Cost: ${{opencode.cost}}
+      Tools used: {{opencode.tools.count}} ({{opencode.tools.names}})"
+```
+
+### Pattern 3: Error-aware routing
+
+```yaml
+- id: implement
+  command: opencode
+  commandArgs: [run, --agent, fullstack, "implement #{{number}}"]
+  onSuccessTaskId: check-error
+  onFailureTaskId: recover
+
+- id: check-error
+  command: sh
+  commandArgs:
+    - -c
+    - 'test -z "{{opencode.error}}" && exit 0 || exit 1'
+  onSuccessTaskId: pr
+  onFailureTaskId: log-error
+
+- id: log-error
+  command: sh
+  commandArgs:
+    - -c
+    - 'echo "OpenCode error: {{opencode.error}}" && gh issue comment {{number}} --body "Agent error: {{opencode.error}}"'
+  onSuccessTaskId: recover
+
+- id: recover
+  command: sh
+  commandArgs: [-c, 'git reset --hard && git clean -fd && git switch main && gh issue edit {{number}} --add-label code:review --remove-label code:doing']
+  onSuccessTaskId: null
+  onFailureTaskId: null
+```

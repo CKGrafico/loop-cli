@@ -167,3 +167,10 @@ export interface CommandResult {
   stdout?: string;
   duration: number;
 }
+
+/** Information about a running agent serve process */
+export interface ServeInfo {
+  port: number;
+  pid: number;
+  url: string;
+}

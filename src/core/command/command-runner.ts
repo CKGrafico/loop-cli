@@ -13,6 +13,8 @@ import type { Telemetry, TelemetrySpan } from "../../daemon/telemetry/index.js";
 import type { CommandResult } from "../../daemon/telemetry/telemetry-types.js";
 import { getAgentIntegrations } from "../../daemon/telemetry/agent-integrations/index.js";
 import { getDataDir } from "../../shared/config/paths.js";
+import { parseOpencodeJsonOutput } from "../context/opencode-json-parser.js";
+import type { OpencodeContext } from "../context/types.js";
 
 function quoteArg(arg: string): string {
   if (arg.length === 0) return "''";
@@ -122,9 +124,6 @@ export async function executeCommand(
     return { exitCode: 1, duration: 0, startedAt, endedAt };
   }
 
-  const shellCommand = formatCommandLine(command, commandArgs);
-  const needShell = /(\$\(|`|&&|\|\||;|>|<|\|)/.test(shellCommand);
-
   // Per-task telemetry override: skip telemetry for this command entirely
   const taskTelemetryDisabled = telemetryCtx?.telemetryConfig?.enabled === false;
 
@@ -172,6 +171,59 @@ export async function executeCommand(
       commandSpan.setAttribute("loop_task.agent.integration", detectedIntegrationId);
     }
   }
+
+  // Serve lifecycle: if an agent integration with serve support is detected,
+  // ensure the serve sidecar is running and inject --attach + --dir into args.
+  let effectiveCommand = command;
+  let effectiveArgs = commandArgs;
+  if (detectedIntegrationId) {
+    const allIntegrations = getAgentIntegrations();
+    const integration = allIntegrations.find((i) => i.id === detectedIntegrationId);
+    if (integration?.ensureServe && integration?.isServeAlive && integration?.prepareRunArgs) {
+      try {
+        // Ensure serve is started (no-op if already running)
+        const serveEnv: Record<string, string> = {};
+        // If we have telemetry env with OTEL config, pass it to serve
+        if (telemetryEnv.OTEL_EXPORTER_OTLP_ENDPOINT) {
+          serveEnv.OTEL_EXPORTER_OTLP_ENDPOINT = telemetryEnv.OTEL_EXPORTER_OTLP_ENDPOINT;
+          serveEnv.OTEL_EXPORTER_OTLP_PROTOCOL = telemetryEnv.OTEL_EXPORTER_OTLP_PROTOCOL ?? "http/protobuf";
+          serveEnv.OTEL_TRACES_EXPORTER = "otlp";
+          serveEnv.OTEL_METRICS_EXPORTER = "otlp";
+          serveEnv.OTEL_LOGS_EXPORTER = "otlp";
+          if (telemetryEnv.OTEL_RESOURCE_ATTRIBUTES) {
+            serveEnv.OTEL_RESOURCE_ATTRIBUTES = telemetryEnv.OTEL_RESOURCE_ATTRIBUTES;
+          }
+          if (telemetryEnv.OPENCODE_EXPERIMENTAL_OPEN_TELEMETRY) {
+            serveEnv.OPENCODE_EXPERIMENTAL_OPEN_TELEMETRY = telemetryEnv.OPENCODE_EXPERIMENTAL_OPEN_TELEMETRY;
+          }
+        }
+        await integration.ensureServe(cwd || process.cwd(), serveEnv);
+
+        if (integration.isServeAlive()) {
+          effectiveArgs = integration.prepareRunArgs(commandArgs, cwd || undefined);
+          if (commandSpan) {
+            commandSpan.setAttribute("loop_task.agent.serve_attached", true);
+          }
+        }
+      } catch (err) {
+        // Serve failure is non-fatal — fall back to cold start
+        if (commandSpan) {
+          commandSpan.setAttribute("loop_task.agent.serve_error", String(err));
+        }
+      }
+    }
+  }
+
+  // Auto-inject --format json for opencode run so we can parse structured output
+  if (detectedIntegrationId === "opencode" && effectiveArgs[0] === "run") {
+    if (!effectiveArgs.includes("--format") && !effectiveArgs.includes("-f")) {
+      effectiveArgs = [...effectiveArgs.slice(0, 1), "--format", "json", ...effectiveArgs.slice(1)];
+    }
+  }
+
+  // Compute shell command after potential --attach injection
+  const shellCommand = formatCommandLine(effectiveCommand, effectiveArgs);
+  const needShell = /(\$\(|`|&&|\|\||;|>|<|\|)/.test(shellCommand);
 
   const baseEnv = childEnv();
   const fileEnv = loadEnvFile();
@@ -254,6 +306,25 @@ export async function executeCommand(
         { exitCode: result.exitCode ?? 0, stdout: stdoutCapture.getCaptured(), duration },
         commandSpan,
       );
+    }
+
+    // Parse opencode JSONL output into context.opencode.*
+    if (detectedIntegrationId === "opencode" && stdoutCapture) {
+      const opencodeCtx = parseOpencodeJsonOutput(stdoutCapture.getCaptured());
+      if (opencodeCtx) {
+        // Emit structured log for observability
+        if (commandSpan) {
+          commandSpan.setAttribute("loop_task.opencode.session_id", opencodeCtx.session.id);
+          commandSpan.setAttribute("loop_task.opencode.cost", opencodeCtx.cost);
+          commandSpan.setAttribute("loop_task.opencode.tools_count", opencodeCtx.tools.count);
+          if (opencodeCtx.error) {
+            commandSpan.setAttribute("loop_task.opencode.error", opencodeCtx.error.name);
+          }
+        }
+        // The parsed context is returned as part of the result so context-parser
+        // can merge it into the loop chain context
+        (result as unknown as Record<string, unknown>).opencode = opencodeCtx;
+      }
     }
 
     if (commandSpan) {

@@ -28,6 +28,7 @@ import { RecipeTaskStore } from "./recipe/task-store.js";
 import { DeferredReloadManager } from "./recipe/deferred-reload.js";
 import { setRecipeSelfWriteNotifier } from "./recipe/file-writer.js";
 import { TelemetryManager } from "./telemetry/index.js";
+import { AgentServeManager } from "./telemetry/agent-serve-manager.js";
 import path from "node:path";
 
 function cleanupStaleProcesses(): void {
@@ -51,6 +52,7 @@ async function main(): Promise<void> {
   settingsManager.load();
   const telemetryManager = new TelemetryManager(settingsManager.get());
   manager.setTelemetryManager(telemetryManager);
+  const agentServeManager = new AgentServeManager(settingsManager.get(), telemetryManager);
   const server = new IpcServer(manager, taskManager, settingsManager, telemetryManager);
   const projectManager = (manager as unknown as { projectManager: ProjectManager }).projectManager;
   const httpServer = new HttpApiServer(manager, taskManager, projectManager, settingsManager);
@@ -178,6 +180,13 @@ async function main(): Promise<void> {
 
   daemonLog(`recipe scanner initialized`);
 
+  // Start agent serve sidecars (e.g., opencode serve) after core services are up
+  if (settingsManager.get().telemetryEnabled) {
+    agentServeManager.ensureAllServe(process.cwd()).catch((err) => {
+      daemonLog(`agent serve startup failed: ${String(err)}`);
+    });
+  }
+
   let shuttingDown = false;
   const cleanup = async () => {
     if (shuttingDown) return;
@@ -185,6 +194,7 @@ async function main(): Promise<void> {
     daemonLog(`shutting down pid=${process.pid}`);
     try {
       killAllActiveProcesses();
+      await agentServeManager.shutdownAll();
       await telemetryManager.shutdown();
       fileWatcher.stop();
       removeDaemonPid();

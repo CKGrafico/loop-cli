@@ -155,7 +155,11 @@ export async function executeRunImpl(ctrl: ExecuteRunAccess, signal: AbortSignal
       }
 
       if (shouldCaptureStdout && (stepStdout || stepStderr)) {
-        mergeCommandOutput(chainContext, stepStdout, stepStderr);
+        // Extract opencode context from the first fulfilled step result
+        const opencodeCtx = stepResults
+          .filter((r): r is PromiseFulfilledResult<ExecutionResult & { opencode?: unknown }> => r.status === "fulfilled")
+          .find((r) => (r.value as unknown as Record<string, unknown>).opencode)?.value?.opencode;
+        mergeCommandOutput(chainContext, stepStdout, stepStderr, opencodeCtx);
       }
 
       const stepFailure = stepResults.some(

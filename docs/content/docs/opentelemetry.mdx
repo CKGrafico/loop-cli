@@ -127,6 +127,137 @@ To disable agent auto-instrumentation while keeping loop-task's own telemetry:
 # Not yet available via CLI — use settings directly
 ```
 
+## Agent Serve Lifecycle
+
+When the daemon starts, it manages a persistent `opencode serve` sidecar process to eliminate per-task cold-start time. The serve process loads skills once, initializes the OTLP SDK once, and stays warm for all subsequent `opencode run` tasks.
+
+### How it works
+
+1. **Daemon boots** → AgentServeManager starts `opencode serve --port 4096` with all static OTEL env vars
+2. **Manager polls** `GET http://localhost:4096/global/health` until healthy (120s timeout, 1s poll interval)
+3. **Recipe task** invokes `opencode run --agent fullstack "do X"`
+4. **Command-runner detects** the opencode integration, calls `ensureServe()` (no-op if already running), then injects `--attach http://localhost:4096` and `--dir <cwd>` into the args
+5. **opencode run --attach** connects to the warm serve instance, delegates the work, returns with a normal exit code
+6. **Loop-task** sees normal exit code + stdout → chain routing, context parsing, and telemetry all work unchanged
+7. **On daemon shutdown** → serve process receives SIGTERM (5s grace), then SIGKILL
+
+### Telemetry configuration split
+
+When serve is alive, static OTEL config lives in the serve process env (set once). Per-task dynamic context stays on the run client.
+
+| Scope | Where | Set when | What |
+|-------|-------|-----------|------|
+| Static | serve process env | Once at daemon boot | `OTEL_EXPORTER_OTLP_*`, `OTEL_*_EXPORTER`, `OTEL_RESOURCE_ATTRIBUTES`, `OPENCODE_EXPERIMENTAL_OPEN_TELEMETRY` |
+| Dynamic | run --attach client env | Per task | `TRACEPARENT`, `TRACESTATE` |
+
+### Fallback behavior
+
+If the serve process is not running (crash, port in use, opencode not installed), loop-task falls back to the current `opencode run` model — no `--attach` injection, all OTEL env injected per-task as before.
+
+### Troubleshooting
+
+- Check serve health: `curl http://localhost:4096/global/health`
+- Check serve logs: look for `opencode-serve` in the daemon log
+- Verify `--attach` injection: enable debug logging, check command-runner output
+
+## Observing Loop Task Agent Sessions
+
+The persistent serve instance supports multiple clients. While loop-task dispatches work headlessly via `opencode run --attach`, you can observe live sessions from another terminal.
+
+### Attach a TUI to the running serve
+
+```bash
+# Attach a full TUI to the serve instance
+opencode attach http://localhost:4096
+
+# List sessions created by recipe tasks
+opencode session list
+
+# Attach to a specific session
+opencode -s <session-id> --attach http://localhost:4096
+```
+
+### Multi-client architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  opencode serve :4096  (managed by loop-task daemon)   │
+│                                                         │
+│  Session A (created by recipe task: "implement #158") │
+│  Session B (created by recipe task: "fix CI")         │
+│  Session C (created by recipe task: "apply feedback") │
+│                                                         │
+└──────────┬──────────────────────┬──────────────────────┘
+           │                      │
+           ▼                      ▼
+  ┌────────────────┐    ┌────────────────────┐
+  │ loop-task      │    │ your terminal      │
+  │ opencode run   │    │ opencode attach    │
+  │ --attach :4096 │    │ http://localhost:  │
+  │ (headless,     │    │ 4096               │
+  │  exits)        │    │ (TUI, observe)    │
+  └────────────────┘    └────────────────────┘
+```
+
+### SSH / headless VM considerations
+
+On headless VMs accessed via SSH, `opencode attach` requires an interactive SSH session with a proper terminal. On the Numa VM, connect via `ssh azureuser@<vm-ip>` and run `opencode attach http://localhost:4096` directly.
+
+## OpenCode JSON Output and context.opencode.*
+
+When the detected agent integration is `opencode`, loop-task auto-injects `--format json` into the run args. After the command completes, the JSONL stdout stream is parsed into a structured context object available to subsequent tasks in the same loop chain.
+
+### Extracted context keys
+
+| Key | Source event | Example |
+|-----|-------------|---------|
+| `opencode.session.id` | `step_start` → `sessionID` | `ses_abc123` |
+| `opencode.session.messageId` | `step_start` → `part.messageID` | `msg_xyz` |
+| `opencode.tokens.input` | `step_finish` (accumulated) | `671` |
+| `opencode.tokens.output` | `step_finish` (accumulated) | `8` |
+| `opencode.tokens.cache.read` | `step_finish` (accumulated) | `21415` |
+| `opencode.tokens.cache.write` | `step_finish` (accumulated) | `0` |
+| `opencode.cost` | `step_finish` (accumulated) | `0.042` |
+| `opencode.tools.count` | `tool_use` (counted) | `3` |
+| `opencode.tools.names` | `tool_use` (unique) | `["bash","read","write"]` |
+| `opencode.gitSnapshot` | `step_start` / `step_finish` | `09dd05d...` |
+| `opencode.error` | `error` event | `{"name":"APIError",...}` |
+| `opencode.text` | last `text` before `step_finish(reason=stop)` | Agent's final summary |
+
+### Interpolation behavior
+
+- Scalar values: `{{opencode.cost}}` → `0.042`
+- Nested scalar: `{{opencode.tokens.input}}` → `671`
+- Object values: `{{opencode.tokens}}` renders as indented JSON:
+  ```json
+  {
+    "input": 671,
+    "output": 8,
+    "reasoning": 0,
+    "cache": { "read": 21415, "write": 0 }
+  }
+  ```
+
+### Text capture policy
+
+Only the last `text` event before `step_finish` with `reason == "stop"` is captured (the agent's final summary). Intermediate reasoning text is not captured.
+
+### Session chaining
+
+With serve, sessions persist between tasks. Chain sessions explicitly using `--session` with context interpolation (within the same loop chain, not between loops):
+
+```yaml
+- id: implement
+  command: opencode
+  commandArgs: [run, --format, json, --agent, fullstack, "implement #158"]
+  # context.opencode.session.id is now available
+
+- id: fix-tests
+  command: opencode
+  commandArgs: [run, --session, "{{opencode.session.id}}", --agent, fullstack, "fix the tests"]
+  # serve resumes session — agent remembers what it just implemented
+```
+
 ## Environment Variables
 
 loop-task respects the standard OpenTelemetry environment variables:
