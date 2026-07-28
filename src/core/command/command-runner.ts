@@ -317,6 +317,7 @@ export async function executeCommand(
       );
     }
 
+    let opencodeResult: unknown = undefined;
     if (detectedIntegrationId === "opencode" && stdoutCapture) {
       const opencodeCtx = parseOpencodeJsonOutput(stdoutCapture.getCaptured());
       if (opencodeCtx) {
@@ -334,8 +335,7 @@ export async function executeCommand(
             commandSpan.setAttribute("loop_task.opencode.error", opencodeCtx.error.name);
           }
         }
-        // The parsed context is returned as part of the result so context-parser
-        (result as unknown as Record<string, unknown>).opencode = opencodeCtx;
+        opencodeResult = opencodeCtx;
       }
     }
 
@@ -350,6 +350,7 @@ export async function executeCommand(
       endedAt,
       ...(captureStdout && stdoutCapture ? { stdout: stdoutCapture.getCaptured() } : {}),
       ...(captureStdout && stderrCapture ? { stderr: stderrCapture.getCaptured() } : {}),
+      ...(opencodeResult ? { opencode: opencodeResult } : {}),
     };
   } catch (error: unknown) {
     const endedAt = new Date();
