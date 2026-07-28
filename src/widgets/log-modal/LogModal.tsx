@@ -17,46 +17,14 @@ function colorForLine(line: string, run: RunRecord): string {
   if (line.startsWith("$ ")) return "#f0abfc";
   if (line.startsWith("  cwd:")) return theme.text.muted;
   if (line.includes("--- Chain:")) return theme.accent.task;
+  if (line.includes("=== CONTEXT ===") || line.includes("=== END CONTEXT ===")) return theme.accent.task;
+  if (line.startsWith("session:") || line.startsWith("error:")) return theme.accent.loop;
   if (line.trimStart().startsWith("[exit")) {
     const match = /\[exit\s+(\d+)/.exec(line);
     const code = match ? Number(match[1]) : run.exitCode;
     return code === 0 ? theme.semantic.success : theme.semantic.danger;
   }
   return theme.text.primary;
-}
-
-const MAX_VALUE_LENGTH = 60;
-
-function expandJsonLine(line: string): string[] | null {
-  const trimmed = line.trim();
-  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return null;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(trimmed);
-  } catch {
-    return null;
-  }
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
-
-  const lines: string[] = ["context: {"];
-  for (const key of Object.keys(parsed)) {
-    const value = (parsed as Record<string, unknown>)[key];
-    let display: string;
-    if (typeof value === "string") {
-      display = value.length > MAX_VALUE_LENGTH
-        ? `"${value.slice(0, MAX_VALUE_LENGTH)}..."`
-        : `"${value}"`;
-    } else if (typeof value === "number" || typeof value === "boolean") {
-      display = String(value);
-    } else if (value === null) {
-      display = "null";
-    } else {
-      display = JSON.stringify(value);
-    }
-    lines.push(`  ${key}: ${display}`);
-  }
-  lines.push("}");
-  return lines;
 }
 
 export function LogModal(props: {
@@ -269,22 +237,6 @@ export function LogModal(props: {
             ) : (
               visible.map((line, i) => {
                 const realIdx = startIdx + i;
-                const expanded = expandJsonLine(line);
-                if (expanded) {
-                  return (
-                    <React.Fragment key={realIdx}>
-                      {expanded.map((sub, j) => (
-                        <Text
-                          key={`${realIdx}-${j}`}
-                          color={j === 0 ? theme.accent.task : theme.text.muted}
-                          wrap="truncate"
-                        >
-                          {sub}
-                        </Text>
-                      ))}
-                    </React.Fragment>
-                  );
-                }
                 return (
                   <Text
                     key={realIdx}
