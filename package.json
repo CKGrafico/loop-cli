@@ -1,6 +1,6 @@
 {
-  "name": "loop-task",
-  "version": "2.6.0",
+  "name": "@plainconceptsplatform/loop-task",
+  "version": "2.6.1",
   "description": "Loop engineering toolkit. Run any command on a cadence, in the background, managed from a terminal board. Schedule tests, builds, syncs, or agent prompts.",
   "type": "module",
   "bin": {
@@ -25,8 +25,8 @@
     "test:coverage": "vitest run --coverage --exclude '**/background-cli.test.ts'",
     "lint": "eslint src/ tests/",
     "typecheck": "tsc --noEmit",
-    "release:dry": "npm publish --dry-run",
-    "release": "npm publish",
+    "release:dry": "npm publish --dry-run --access public",
+    "release": "npm publish --access public",
     "visual-evidence": "tsx src/visual-evidence/cli.ts",
     "visual-evidence:publish": "tsx src/visual-evidence/publish.ts",
     "skills:mark-internal": "node scripts/mark-agent-skills-internal.mjs",
@@ -63,6 +63,10 @@
   "homepage": "https://github.com/PlainConceptsPlatform/loop-task",
   "bugs": {
     "url": "https://github.com/PlainConceptsPlatform/loop-task/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "engines": {
     "node": ">=20.0.0"
