@@ -296,15 +296,21 @@ export async function executeCommand(
     ? new StdoutCaptureTransform(MAX_CONTEXT_STDOUT_BYTES)
     : null;
 
-  if (stdoutCapture) {
-    child.stdout!.pipe(stdoutCapture).pipe(logStream, { end: false });
-  } else {
-    child.stdout!.pipe(logStream, { end: false });
-  }
-  if (stderrCapture) {
-    child.stderr!.pipe(stderrCapture).pipe(logStream, { end: false });
-  } else {
-    child.stderr!.pipe(logStream, { end: false });
+  const isOpencodeJson = detectedIntegrationId === "opencode" && effectiveArgs.includes("--format") && effectiveArgs.includes("json");
+
+  const pipeConfigs = [
+    { stream: child.stdout, capture: stdoutCapture, suppressLog: isOpencodeJson },
+    { stream: child.stderr, capture: stderrCapture, suppressLog: false },
+  ] as const;
+
+  for (const { stream, capture, suppressLog } of pipeConfigs) {
+    if (capture && suppressLog) {
+      stream!.pipe(capture);
+    } else if (capture) {
+      stream!.pipe(capture).pipe(logStream, { end: false });
+    } else {
+      stream!.pipe(logStream, { end: false });
+    }
   }
 
   try {
@@ -334,25 +340,14 @@ export async function executeCommand(
     }
 
     let opencodeResult: unknown = undefined;
-    if (detectedIntegrationId === "opencode" && stdoutCapture) {
-      const opencodeCtx = parseOpencodeJsonOutput(stdoutCapture.getCaptured());
-      if (opencodeCtx) {
-        const modelIdx = effectiveArgs.indexOf("--model");
-        const modelShortIdx = effectiveArgs.indexOf("-m");
-        const modelIdxToUse = modelIdx >= 0 ? modelIdx : modelShortIdx;
-        if (modelIdxToUse >= 0 && modelIdxToUse + 1 < effectiveArgs.length) {
-          opencodeCtx.model = effectiveArgs[modelIdxToUse + 1];
-        }
-        if (commandSpan) {
-          commandSpan.setAttribute("loop_task.opencode.session_id", opencodeCtx.session.id);
-          commandSpan.setAttribute("loop_task.opencode.cost", opencodeCtx.cost);
-          commandSpan.setAttribute("loop_task.opencode.tools_count", opencodeCtx.tools.count);
-          if (opencodeCtx.error) {
-            commandSpan.setAttribute("loop_task.opencode.error", opencodeCtx.error.name);
-          }
-        }
-        opencodeResult = opencodeCtx;
-      }
+    const opencodeCtx = (detectedIntegrationId === "opencode" && stdoutCapture)
+      ? parseOpencodeJsonOutput(stdoutCapture.getCaptured())
+      : null;
+
+    if (opencodeCtx) {
+      opencodeCtx.model = extractModelFromArgs(effectiveArgs);
+      opencodeResult = opencodeCtx;
+      writeOpencodeSummary(logStream, opencodeCtx, isOpencodeJson);
     }
 
     if (commandSpan) {
@@ -479,4 +474,22 @@ function truncateForSpan(text: string, maxBytes: number): string {
   const buf = Buffer.from(text, "utf-8");
   if (buf.length <= maxBytes) return text;
   return buf.subarray(0, maxBytes).toString("utf-8") + `\n... [truncated, ${buf.length} bytes total]`;
+}
+
+function extractModelFromArgs(args: string[]): string | null {
+  const flags = ["--model", "-m"];
+  for (const flag of flags) {
+    const idx = args.indexOf(flag);
+    if (idx >= 0 && idx + 1 < args.length) {
+      return args[idx + 1];
+    }
+  }
+  return null;
+}
+
+function writeOpencodeSummary(logStream: Writable, ctx: OpencodeContext, writeSummary: boolean): void {
+  if (!writeSummary) return;
+  logStream.write(`session: ${ctx.session.id} | tokens: ${ctx.tokens.input} in / ${ctx.tokens.output} out | cost: $${ctx.cost} | tools: ${ctx.tools.count}\n`);
+  if (ctx.text) logStream.write(`${ctx.text}\n`);
+  if (ctx.error) logStream.write(`error: ${ctx.error.name}: ${ctx.error.message}\n`);
 }
