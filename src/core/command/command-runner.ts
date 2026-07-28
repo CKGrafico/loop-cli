@@ -317,7 +317,7 @@ export async function executeCommand(
     if (stdoutCapture?.isTruncated()) {
       logStream.write(t("context.truncationWarning"));
     }
-    logStream.write(t("loop.exitMarker", { code: String(result.exitCode), duration: formatDuration(duration) }));
+    writeExitMarker(logStream, result.exitCode ?? 0, duration);
 
     if (commandSpan) {
       commandSpan.setAttribute("process.exit.code", result.exitCode ?? 0);
@@ -372,7 +372,7 @@ export async function executeCommand(
     if (stdoutCapture?.isTruncated()) {
       logStream.write(t("context.truncationWarning"));
     }
-    logStream.write(t("loop.exitMarker", { code: exitCode, duration: formatDuration(duration) }));
+    writeExitMarker(logStream, exitCode, duration, error);
 
     if (commandSpan) {
       commandSpan.setAttribute("process.exit.code", exitCode);
@@ -488,4 +488,14 @@ function writeOpencodeSummary(logStream: Writable, ctx: OpencodeContext, writeSu
   logStream.write(`session: ${ctx.session.id} | tokens: ${ctx.tokens.input} in / ${ctx.tokens.output} out | cost: $${ctx.cost} | tools: ${ctx.tools.count}\n`);
   if (ctx.text) logStream.write(`${ctx.text}\n`);
   if (ctx.error) logStream.write(`error: ${ctx.error.name}: ${ctx.error.message}\n`);
+}
+
+function writeExitMarker(logStream: Writable, exitCode: number, durationMs: number, error?: unknown): void {
+  const dur = formatDuration(durationMs);
+  if (exitCode === 0) {
+    logStream.write(t("loop.exitSuccess", { duration: dur }));
+  } else {
+    const reason = error instanceof Error ? error.message.slice(0, 200) : `exit code ${exitCode}`;
+    logStream.write(t("loop.exitFailure", { code: exitCode, duration: dur, reason }));
+  }
 }

@@ -72,6 +72,8 @@
   "loop.cwdLine": "  cwd: {cwd}\n",
   "loop.chainHeader": "\n--- Chain: {name} ({branch}, prev exit {prevExit}) ---\n",
   "loop.exitMarker": "[exit {code} · {duration}]\n",
+  "loop.exitSuccess": "[exit 0 · {duration} · ✓ success]\n",
+  "loop.exitFailure": "[exit {code} · {duration} · ✗ failed: {reason}]\n",
   "loop.cwdMissingLog": "[error] working directory does not exist: {cwd}\n",
   "loop.cwdMissing": "Working directory does not exist: {cwd}",
   "loop.executing": "Executing: {command}",
