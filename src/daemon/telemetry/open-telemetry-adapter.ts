@@ -27,6 +27,10 @@ import { OTLPMetricExporter as OTLPMetricExporterGrpc } from "@opentelemetry/exp
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { trace, context, propagation, metrics, SpanStatusCode, SpanKind, type Span, type Tracer } from "@opentelemetry/api";
 import type { Context, Meter, Counter, Histogram } from "@opentelemetry/api";
+import { logs, type Logger } from "@opentelemetry/api-logs";
+import { LoggerProvider, type LogRecordExporter, SimpleLogRecordProcessor } from "@opentelemetry/sdk-logs";
+import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
+import { OTLPLogExporter as OTLPLogExporterGrpc } from "@opentelemetry/exporter-logs-otlp-grpc";
 
 import { daemonLog } from "../daemon-log.js";
 
@@ -106,8 +110,10 @@ class OtelSpan implements TelemetrySpan {
 export class OpenTelemetryAdapter implements Telemetry {
   private sdk: NodeSDK | null = null;
   private tracerProvider: NodeTracerProvider | null = null;
+  private loggerProvider: LoggerProvider | null = null;
   private tracer: Tracer;
   private meter: Meter;
+  private logger: Logger;
   private settings: DaemonSettings;
   private status: TelemetryStatus;
   private lastExportError: string | undefined;
@@ -134,6 +140,7 @@ export class OpenTelemetryAdapter implements Telemetry {
     this.settings = settings;
     this.tracer = trace.getTracer("loop-task");
     this.meter = metrics.getMeter("loop-task");
+    this.logger = logs.getLogger("loop-task");
 
     this.status = {
       enabled: settings.telemetryEnabled,
@@ -147,7 +154,13 @@ export class OpenTelemetryAdapter implements Telemetry {
       exporterState: this.resolveExporterState(settings),
     };
 
-    // Initialize metric instruments (always created — no-op when no SDK)
+    if (settings.telemetryEnabled && settings.telemetryEndpoint) {
+      this.initializeSdk(settings);
+    }
+
+    // Initialize metric instruments AFTER SDK startup so they bind to the
+    // real MeterProvider, not the default no-op one. When the SDK is not
+    // initialized, these still work — they bind to the API-level no-op meter.
     this.runCounter = this.meter.createCounter(METRIC_NAMES.RUNS);
     this.runDurationHistogram = this.meter.createHistogram(METRIC_NAMES.RUN_DURATION);
     this.taskCounter = this.meter.createCounter(METRIC_NAMES.TASKS);
@@ -163,10 +176,6 @@ export class OpenTelemetryAdapter implements Telemetry {
     this.agentCacheWriteTokensCounter = this.meter.createCounter(METRIC_NAMES.AGENT_CACHE_WRITE_TOKENS);
     this.agentCostCounter = this.meter.createCounter(METRIC_NAMES.AGENT_COST);
     this.failureCounter = this.meter.createCounter(METRIC_NAMES.FAILURES);
-
-    if (settings.telemetryEnabled && settings.telemetryEndpoint) {
-      this.initializeSdk(settings);
-    }
   }
 
   private resolveExporterState(settings: DaemonSettings): ExporterState {
@@ -226,7 +235,26 @@ export class OpenTelemetryAdapter implements Telemetry {
       });
 
       this.sdk.start();
+      // Re-obtain tracer and meter from the global API after SDK startup.
+      // The API now resolves to the real providers registered by NodeSDK.
       this.tracer = trace.getTracer(settings.telemetryServiceName);
+      this.meter = metrics.getMeter(settings.telemetryServiceName);
+
+      // Initialize OTLP log exporter
+      const logsUrl = endpoint.endsWith("/v1/logs")
+        ? endpoint
+        : `${endpoint}/v1/logs`;
+      const logExporter: LogRecordExporter = isGrpc
+        ? new OTLPLogExporterGrpc({ url: settings.telemetryEndpoint })
+        : new OTLPLogExporter({ url: logsUrl, headers });
+      const loggerProvider = new LoggerProvider({
+        resource,
+        processors: [new SimpleLogRecordProcessor({ exporter: logExporter })],
+      });
+      logs.setGlobalLoggerProvider(loggerProvider);
+      this.loggerProvider = loggerProvider;
+      this.logger = logs.getLogger(settings.telemetryServiceName);
+
       this.status.exporterState = "configured";
       daemonLog(`telemetry: SDK initialized, endpoint=${settings.telemetryEndpoint}`);
     } catch (err) {
@@ -391,6 +419,24 @@ export class OpenTelemetryAdapter implements Telemetry {
     }
   }
 
+  logEvent(
+    level: "trace" | "debug" | "info" | "warn" | "error" | "fatal",
+    message: string,
+    attributes?: Record<string, string | number | boolean>,
+  ): void {
+    try {
+      const record = this.logger.emit({
+        body: message,
+        severityText: level,
+        attributes: attributes ?? {},
+      });
+      // Ensure the log record is flushed in a timely manner
+      void record;
+    } catch (err) {
+      daemonLog(`telemetry: log emit failed: ${String(err)}`);
+    }
+  }
+
   prepareChildProcess(
     invocation: CommandInvocation,
     childContext: ChildTelemetryContext,
@@ -413,8 +459,12 @@ export class OpenTelemetryAdapter implements Telemetry {
 
     env.OTEL_EXPORTER_OTLP_ENDPOINT = endpoint;
     env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = endpoint;
+    env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT = endpoint;
+    env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT = endpoint;
     env.OTEL_EXPORTER_OTLP_PROTOCOL = protocol;
     env.OTEL_TRACES_EXPORTER = "otlp";
+    env.OTEL_METRICS_EXPORTER = "otlp";
+    env.OTEL_LOGS_EXPORTER = "otlp";
 
     const authHeaders = process.env.OTEL_EXPORTER_OTLP_HEADERS
       ?? process.env.OTEL_EXPORTER_OTLP_TRACES_HEADERS;
@@ -507,6 +557,10 @@ export class OpenTelemetryAdapter implements Telemetry {
         flushes.push(this.tracerProvider.forceFlush());
       }
 
+      if (this.loggerProvider) {
+        flushes.push(this.loggerProvider.forceFlush());
+      }
+
       const sdkInternals = this.sdk as unknown as {
         _tracerProvider?: { forceFlush?: () => Promise<void> };
         _meterProvider?: { forceFlush?: () => Promise<void> };
@@ -541,6 +595,15 @@ export class OpenTelemetryAdapter implements Telemetry {
         // best effort
       }
       this.tracerProvider = null;
+    }
+    if (this.loggerProvider) {
+      try {
+        await this.loggerProvider.forceFlush();
+        await this.loggerProvider.shutdown();
+      } catch {
+        // best effort
+      }
+      this.loggerProvider = null;
     }
     if (!this.sdk) return;
     try {

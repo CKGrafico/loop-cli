@@ -26,6 +26,12 @@ export interface Telemetry {
   recordFailure(error: unknown, attributes?: Record<string, unknown>): void;
   /** Record agent usage data (tokens, cost) */
   recordAgentUsage(input: AgentUsage, span?: TelemetrySpan): void;
+  /** Emit a structured log record to the OTLP logs pipeline */
+  logEvent(
+    level: "trace" | "debug" | "info" | "warn" | "error" | "fatal",
+    message: string,
+    attributes?: Record<string, string | number | boolean>,
+  ): void;
   /** Prepare environment variables for a child process */
   prepareChildProcess(
     invocation: import("./telemetry-types.js").CommandInvocation,

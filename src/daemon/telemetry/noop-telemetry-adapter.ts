@@ -55,6 +55,8 @@ export class NoopTelemetryAdapter implements Telemetry {
 
   recordAgentUsage(): void {}
 
+  logEvent(): void {}
+
   prepareChildProcess(
     _invocation?: import("./telemetry-types.js").CommandInvocation,
     _context?: import("./telemetry-types.js").ChildTelemetryContext,
