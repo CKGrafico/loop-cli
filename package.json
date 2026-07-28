@@ -1,6 +1,6 @@
 {
   "name": "@plainconceptsplatform/loop-task",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "description": "Loop engineering toolkit. Run any command on a cadence, in the background, managed from a terminal board. Schedule tests, builds, syncs, or agent prompts.",
   "type": "module",
   "bin": {
