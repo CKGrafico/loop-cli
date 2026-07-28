@@ -341,29 +341,32 @@ The critical and moderate strategies use the scaffold pattern: concrete tasks bo
 
 ## OpenCode Serve Integration Patterns
 
-When opencode serve is running (managed by the daemon), `opencode run` tasks automatically use `--attach` for warm-start. `--format json` is auto-injected, and `context.opencode.*` keys are available in subsequent tasks.
+When opencode serve is running (managed by the daemon), `opencode run` tasks automatically get `--attach`, `--format json`, `--session`, and `--model` injected. `context.opencode.*` keys are available in subsequent tasks.
 
-### Pattern 1: Session chaining (implement → fix-tests)
+### Pattern 1: Auto session chaining (implement → fix-tests → PR)
 
 ```yaml
 - id: implement
   command: opencode
-  commandArgs: [run, --agent, fullstack, "implement #{{number}}: {{title}}. {{body}}"]
-  # --attach and --format json auto-injected
-  # context.opencode.session.id now available
+  commandArgs: [run, --agent, fullstack, --model, plainconcepts/glm-5-1, "implement #{{number}}: {{title}}. {{body}}"]
+  # Auto-injected: --format json --attach http://localhost:4096 --dir <cwd>
+  # After: context.opencode.session.id, context.opencode.model available
   onSuccessTaskId: fix-tests
 
 - id: fix-tests
   command: opencode
-  commandArgs: [run, --session, "{{opencode.session.id}}", --agent, fullstack, "fix the failing tests"]
-  # serve resumes session — agent remembers the implementation
+  commandArgs: [run, --agent, fullstack, "fix the failing tests"]
+  # Auto-injected: --session <id> --model plainconcepts/glm-5-1
+  # Agent remembers implementation from Task 1, uses same model
+  # Tokens and cost accumulate across both tasks
   onSuccessTaskId: pr
 
 - id: pr
   command: sh
   commandArgs:
     - -c
-    - 'gh pr create --title "Resolve #{{number}}: {{title}}" --body "Closes #{{number}}"'
+    - 'gh pr create --title "Resolve #{{number}}: {{title}}" --body "Closes #{{number}}. Tokens: {{opencode.tokens}} Cost: ${{opencode.cost}}"'
+```
 ```
 
 ### Pattern 2: Token and cost reporting in PR comments

@@ -136,7 +136,12 @@ When the daemon starts, it manages a persistent `opencode serve` sidecar process
 1. **Daemon boots** → AgentServeManager starts `opencode serve --port 4096` with all static OTEL env vars
 2. **Manager polls** `GET http://localhost:4096/global/health` until healthy (120s timeout, 1s poll interval)
 3. **Recipe task** invokes `opencode run --agent fullstack "do X"`
-4. **Command-runner detects** the opencode integration, calls `ensureServe()` (no-op if already running), then injects `--attach http://localhost:4096` and `--dir <cwd>` into the args
+4. **Command-runner detects** the opencode integration and auto-injects:
+   - `--format json` (for structured output parsing)
+   - `--attach http://localhost:4096` (when serve is alive)
+   - `--dir <cwd>` (so serve works in the right directory)
+   - `--session <id>` (when prior opencode task in chain produced a session)
+   - `--model <model>` (when chaining sessions from prior opencode task)
 5. **opencode run --attach** connects to the warm serve instance, delegates the work, returns with a normal exit code
 6. **Loop-task** sees normal exit code + stdout → chain routing, context parsing, and telemetry all work unchanged
 7. **On daemon shutdown** → serve process receives SIGTERM (5s grace), then SIGKILL
@@ -223,6 +228,7 @@ When the detected agent integration is `opencode`, loop-task auto-injects `--for
 | `opencode.gitSnapshot` | `step_start` / `step_finish` | `09dd05d...` |
 | `opencode.error` | `error` event | `{"name":"APIError",...}` |
 | `opencode.text` | last `text` before `step_finish(reason=stop)` | Agent's final summary |
+| `opencode.model` | captured from `--model` arg | `plainconcepts/glm-5-1` |
 
 ### Interpolation behavior
 
@@ -242,21 +248,29 @@ When the detected agent integration is `opencode`, loop-task auto-injects `--for
 
 Only the last `text` event before `step_finish` with `reason == "stop"` is captured (the agent's final summary). Intermediate reasoning text is not captured.
 
-### Session chaining
+### Auto session chaining
 
-With serve, sessions persist between tasks. Chain sessions explicitly using `--session` with context interpolation (within the same loop chain, not between loops):
+When a chain has multiple `opencode run` tasks, loop-task automatically injects `--session` and `--model` from the prior opencode task. No need to write `{{opencode.session.id}}` in recipes:
 
 ```yaml
 - id: implement
   command: opencode
-  commandArgs: [run, --format, json, --agent, fullstack, "implement #158"]
-  # context.opencode.session.id is now available
+  commandArgs: [run, --agent, fullstack, --model, plainconcepts/glm-5-1, "implement #158"]
+  # After: context.opencode.session.id = ses_abc, context.opencode.model = plainconcepts/glm-5-1
 
 - id: fix-tests
   command: opencode
-  commandArgs: [run, --session, "{{opencode.session.id}}", --agent, fullstack, "fix the tests"]
-  # serve resumes session — agent remembers what it just implemented
+  commandArgs: [run, --agent, fullstack, "fix the tests"]
+  # Auto-injected: --format json --session ses_abc --model plainconcepts/glm-5-1
+  # Agent remembers Task 1, uses same model, tokens accumulate
+
+- id: pr
+  command: sh
+  commandArgs: [-c, 'gh pr create --title "Resolve #{{number}}" --body "Tokens: {{opencode.tokens}} Cost: ${{opencode.cost}}"']
+  # Shows total session usage
 ```
+
+Session chaining is within the same loop chain only. Context is discarded between iterations.
 
 ## Environment Variables
 

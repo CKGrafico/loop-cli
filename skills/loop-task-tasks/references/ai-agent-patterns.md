@@ -176,17 +176,19 @@ Context accumulates across the chain. Later AI Tasks see all earlier context key
 
 ## OpenCode Serve Model
 
-When the daemon starts, it manages a persistent `opencode serve` sidecar process. Recipe tasks that invoke `opencode run` automatically connect to this warm serve instance via `--attach`, eliminating per-task cold-start time (30-90s saved per invocation).
+When the daemon starts, it manages a persistent `opencode serve` sidecar process. Recipe tasks that invoke `opencode run` automatically connect to this warm serve instance via `--attach`, eliminating per-task cold-start time.
 
-### What the serve model does automatically
+### What gets auto-injected (no recipe changes needed)
 
-- **`--attach http://localhost:4096`** — injected into `opencode run` args when serve is alive
-- **`--dir <cwd>`** — injected so serve operates in the correct working directory
-- **`--format json`** — auto-injected so loop-task can parse structured output
-- **Static OTEL config** — lives in the serve process env (set once), not per-task
-- **`TRACEPARENT`** — still per-task, on the run client
+When loop-task detects an `opencode run` command, it automatically injects:
 
-Recipes do NOT need to change. The detection and injection happen in the command-runner at the same point telemetry env is already injected.
+- `--format json` into args (for structured output parsing)
+- `--attach http://localhost:4096` when serve is alive (warm start)
+- `--dir <cwd>` so serve operates in the correct working directory
+- `--session <id>` when a prior opencode task in the same chain produced a session ID
+- `--model <model>` when chaining sessions and the prior task specified a model
+
+Static OTEL config lives in the serve process env (set once at daemon boot). Per-task only `TRACEPARENT` and `TRACESTATE` are injected.
 
 ### context.opencode.* keys
 
@@ -194,52 +196,57 @@ After an `opencode run` task completes, loop-task parses the JSONL stdout stream
 
 | Key | Example | Description |
 |-----|---------|-------------|
-| `{{opencode.session.id}}` | `ses_abc123` | Session ID for chaining with `--session` |
-| `{{opencode.tokens.input}}` | `671` | Input tokens (accumulated) |
+| `{{opencode.session.id}}` | `ses_abc123` | Session ID (auto-chained to next opencode task) |
+| `{{opencode.tokens.input}}` | `671` | Input tokens (accumulated across same-session tasks) |
 | `{{opencode.tokens.output}}` | `8` | Output tokens (accumulated) |
 | `{{opencode.tokens}}` | indented JSON | Full token object with cache breakdown |
 | `{{opencode.cost}}` | `0.042` | Total cost in USD (accumulated) |
 | `{{opencode.tools.count}}` | `3` | Number of tool calls |
+| `{{opencode.tools.names}}` | `["bash","read"]` | Unique tool names used |
 | `{{opencode.gitSnapshot}}` | `09dd05d...` | Git snapshot hash from final step |
 | `{{opencode.error}}` | indented JSON | Error info if an error occurred |
-| `{{opencode.text}}` | agent summary | Last text before final step_finish (Option B) |
+| `{{opencode.text}}` | truncated text | Last text before final step_finish (agent summary) |
+| `{{opencode.model}}` | `plainconcepts/glm-5-1` | Model used (auto-carried to chained tasks) |
 
-When a context value is an object, `{{opencode.tokens}}` renders as `JSON.stringify(value, null, 2)` — indented JSON suitable for PR comments.
+When a context value is an object, `{{opencode.tokens}}` renders as indented JSON via `JSON.stringify(value, null, 2)`.
 
-### Session chaining within a loop chain
+### Auto session chaining
 
-Sessions persist in the serve process between tasks. Chain them explicitly using `--session` with `{{opencode.session.id}}`:
+When a chain has multiple `opencode run` tasks, loop-task automatically injects `--session` and `--model` from the prior opencode task. The agent remembers the conversation context:
 
 ```yaml
 - id: implement
   command: opencode
-  commandArgs: [run, --agent, fullstack, "implement #158"]
-  # --format json auto-injected, context.opencode.session.id available after
+  commandArgs: [run, --agent, fullstack, --model, plainconcepts/glm-5-1, "implement #158"]
+  # After: context.opencode.session.id = ses_abc, context.opencode.model = plainconcepts/glm-5-1
 
 - id: fix-tests
   command: opencode
-  commandArgs: [run, --session, "{{opencode.session.id}}", --agent, fullstack, "fix the tests"]
-  # serve resumes session — agent remembers Task 1's context
-```
+  commandArgs: [run, --agent, fullstack, "fix the tests"]
+  # Auto-injected: --session ses_abc --model plainconcepts/glm-5-1
+  # Agent remembers implementation from Task 1
+  # Tokens and cost accumulate across both tasks
 
-Session chaining is within the same loop chain only. Context (including `opencode.*`) is discarded between iterations.
-
-### Including token info in PR comments
-
-```yaml
 - id: pr
   command: sh
-  commandArgs:
-    - -c
-    - >
-      gh pr create --title "Resolve #{{number}}"
-      --body "Tokens: {{opencode.tokens}} Cost: ${{opencode.cost}}"
+  commandArgs: [-c, 'gh pr create --title "Resolve #{{number}}" --body "Tokens: {{opencode.tokens}} Cost: ${{opencode.cost}}"']
+  # Shows total session usage across all opencode tasks
 ```
+
+Session chaining is within the same loop chain only. Context is discarded between iterations.
+
+### Token accumulation
+
+When multiple opencode tasks share the same session, tokens and cost accumulate:
+- Task 1: input=100, cost=0.02
+- Task 2: input=80, cost=0.01
+- `{{opencode.tokens.input}}` after Task 2 = 180
+- `{{opencode.cost}}` after Task 2 = 0.03
 
 ### Fallback behavior
 
-If the serve process is not running (crash, port in use, opencode not installed), loop-task falls back to the current `opencode run` model — no `--attach` injection, slower cold-start, but fully functional.
+If the serve process is not running (crash, port in use, opencode not installed), loop-task falls back to cold-start `opencode run` without `--attach`. Fully functional, just slower.
 
 ### Claude Code
 
-Claude Code does not support the serve model (`claude -p` has no `--attach` equivalent). Claude Code tasks continue to use per-task env injection. When Claude Code adds serve-attach support, the same pattern will apply.
+Claude Code does not support the serve model (`claude -p` has no `--attach` equivalent). Claude Code tasks continue to use per-task env injection.
